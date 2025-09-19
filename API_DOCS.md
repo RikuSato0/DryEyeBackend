@@ -264,9 +264,27 @@ Endpoints
   - Response 200: `{ success: true, message: "Eye Routine Reminder added successfully", data: { ...reminder } }`
 
 - POST `/api/reminder/get`
-  - Body: `{ type?, period?: "today" }`
-  - Behavior: lazily marks yesterday’s missed occurrences (by reminder timezone) before returning data
-  - Response 200: `{ success: true, data: { reminders: [ ... ] } }`
+  - Body: `{ timezone, period, type?, date? }`
+  - type: a specific type or `"all"` for all types
+  - period values:
+    - `today`: returns only today’s active reminders; lazily marks MISSED for yesterday and for today’s past times (evaluated in reminder.timezone). Response timestamps are converted to the requested `timezone`. If `type` is `all` or omitted, all types are returned.
+    - `specific`: requires `date` (YYYY-MM-DD in requested `timezone`). Returns reminders/history for that date, respecting repeatReminder and start/end. If `type` is `all` or omitted, all types are included.
+    - `notification`: returns today’s upcoming reminders and last 2 days history (no lazy-marking); ignores `type`.
+  - Responses:
+    - today/specific: `{ success:true, data:{ reminders:[ { id, type, title, instructions, selectedEye, timezone, occurrenceDate, time, status } ] } }`
+    - notification: `{ success:true, data:{ upcoming:[...], history:[...] } }`
+
+Examples
+```json
+// Today, all types
+{ "timezone": "Europe/Stockholm", "period": "today", "type": "all" }
+
+// Specific date for one type
+{ "timezone": "Europe/Stockholm", "period": "specific", "date": "2025-09-22", "type": "BASIC_BLINK" }
+
+// Notification view (upcoming today + last 2 days history)
+{ "timezone": "Europe/Stockholm", "period": "notification" }
+```
 
 - DELETE `/api/reminder/delete/:id`
   - Response 200: `{ success: true, message: "Eye Routine Reminder deleted successfully" }`
@@ -276,6 +294,42 @@ Endpoints
   - Response 200: `{ success: true, message: "Eye Routine Reminder updated successfully" }`
 
 ---
+
+## Scores (JWT required)
+
+- POST `/api/score/save`
+  - Body:
+    ```json
+    {
+      "Time": "2025-09-21T09:00:00.000Z",
+      "Score": 85,
+      "Timezone": "Europe/Stockholm",
+      "type": "EyeComfort",
+      "text":"test"
+    }
+    ```
+  - Response 200: `{ success: true, message: "Score saved successfully", data: { id: "<id>" } }`
+  - Types: `EyeComfort`, `tbut`, `tmh`, `blink percent`, `blink rate`
+
+- POST `/api/score/get`
+  - Body:
+    ```json
+    { "type": "EyeComfort", "period": "last_three_month", "timezone": "Europe/Stockholm" }
+    ```
+  - period values: `last_three_month` | `last_six_month` | `last_year`
+  - Response 200:
+    ```json
+    {
+      "success": true,
+      "message": "Scores fetched successfully",
+      "messageCode": 200,
+      "data": {
+        "items": [
+          { "id": "<id>", "time": "2025-09-21T11:00:00+02:00", "score": 85, "text": "test", "timezone": "Europe/Stockholm", "type": "EyeComfort" }
+        ]
+      }
+    }
+    ```
 
 ## Training (JWT required)
 
