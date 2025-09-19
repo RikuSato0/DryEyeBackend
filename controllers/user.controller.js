@@ -6,6 +6,7 @@ const {successResponse, errorResponse} = require("../utils/responseHandler");
 const interestRepository = require('../repositories/interest.repository');
 const feedbackRepository = require('../repositories/feedback.repository');
 const path = require('path');
+const userService = require('../services/user.service');
 
 const {Types} = require("mongoose");
 
@@ -218,6 +219,28 @@ class UserController {
       });
 
       return successResponse(res, {}, 'Interest Form submitted successfully', 301, 200);
+    } catch (err) {
+      return errorResponse(res, err.message, 400, err.messageCode);
+    }
+  }
+
+  async meetDoctor(req, res, next) {
+    try {
+      const { firstName, lastName, emailAddress, state, country } = req.body;
+      await userService.createMeetDoctor(req.user.userId, firstName, lastName, emailAddress, state, country);
+      return successResponse(res, {}, 'Meet doctor request submitted', 302, 200);
+    } catch (err) {
+      return errorResponse(res, err.message, 400, err.messageCode);
+    }
+  }
+
+  async contactSynro(req, res, next) {
+    try {
+      const { message } = req.body;
+      const email = req.user.email;
+      const userName = req.user.userName || 'User';
+      await userService.sendContactMessage(req.user.userId, email, userName, message);
+      return successResponse(res, {}, 'Message sent successfully', 303, 200);
     } catch (err) {
       return errorResponse(res, err.message, 400, err.messageCode);
     }

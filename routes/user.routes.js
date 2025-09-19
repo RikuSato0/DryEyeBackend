@@ -17,6 +17,8 @@ router.put('/countryTimezone', userController.updateCountryTimezone);
 router.put('/avatar', uploadAvatar.single('avatar'), userController.updateAvatar);
 router.put('/email', userController.updateEmail);
 router.put('/subscription', userController.updateSubscription);
+router.post('/meetDoctor', userController.meetDoctor);
+router.post('/contact', userController.contactSynro);
 
 router.post('/interest', userController.storeInterestForm);
 router.post('/feedback', userController.feedbackForm);

@@ -264,6 +264,71 @@ class AuthService {
 
     return { user, token };
   }
+
+  // Forgot password: send verification code
+  async forgotPassword(email) {
+    const user = await userRepository.findByEmail(email);
+    if (!user) {
+      throw new ApiError(404, 'User not found', 404);
+    }
+    const otp = generateOtp();
+    user.otpCodeHash = await hashOtp(otp);
+    user.otpExpiresAt = getExpiryDate();
+    user.otpAttemptCount = 0;
+    user.otpLastSentAt = new Date();
+    // Limit resets reuse
+    user.passwordResetValidUntil = user.otpExpiresAt;
+    await user.save();
+
+    try {
+      await sendVerificationEmail(user.email, otp);
+    } catch (error) {
+      logger.warn('Primary mailer failed, trying alternative:', error.message);
+      await sendVerificationEmailAlt(user.email, otp);
+    }
+    return { email: user.email };
+  }
+
+  // Verify OTP for password reset
+  async verifyPasswordResetOtp(email, code) {
+    const user = await userRepository.findByEmail(email);
+    if (!user) {
+      throw new ApiError(404, 'User not found', 404);
+    }
+    if (!user.otpCodeHash || !user.otpExpiresAt) {
+      throw new ApiError(400, 'Invalid or expired code', 411);
+    }
+    if (isExpired(user.otpExpiresAt)) {
+      throw new ApiError(400, 'Invalid or expired code', 412);
+    }
+    const ok = await compareOtp(code, user.otpCodeHash);
+    if (!ok) {
+      user.otpAttemptCount = (user.otpAttemptCount || 0) + 1;
+      await user.save();
+      throw new ApiError(400, 'Invalid or expired code', 414);
+    }
+    // mark window to allow password change
+    user.passwordResetValidUntil = new Date(Date.now() + 10 * 60 * 1000);
+    await user.save();
+    return true;
+  }
+
+  // Update password after OTP verified
+  async resetPassword(email, newPassword) {
+    const user = await userRepository.findByEmail(email);
+    if (!user) throw new ApiError(404, 'User not found', 404);
+    if (!user.passwordResetValidUntil || new Date(user.passwordResetValidUntil) < new Date()) {
+      throw new ApiError(400, 'Password reset session expired. Please verify code again.', 420);
+    }
+    user.password = newPassword;
+    // clear reset window & OTP artifacts
+    user.passwordResetValidUntil = null;
+    user.otpCodeHash = null;
+    user.otpExpiresAt = null;
+    user.otpAttemptCount = 0;
+    await user.save();
+    return user;
+  }
 }
 
 module.exports = new AuthService();

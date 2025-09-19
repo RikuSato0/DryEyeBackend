@@ -39,7 +39,7 @@ const UserSchema = new mongoose.Schema({
   },
   consentPersonalDataProcessing: {
     type: Boolean,
-    default: false
+    default: true
   },
   consentToAnonymousDataCollection: {
     type: Boolean,
@@ -94,6 +94,10 @@ UserSchema.add({
   streaks: {
     type: Number,
     default: 0
+  },
+  passwordResetValidUntil: {
+    type: Date,
+    default: null
   }
 });
 

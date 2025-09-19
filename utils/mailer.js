@@ -135,9 +135,62 @@ async function sendVerificationEmail(toEmail, code) {
   throw new Error(`Email sending failed: ${lastError?.message || 'No SMTP provider available'}`);
 }
 
+async function sendContactEmail(toEmail, userName, fromEmail, message) {
+  const fromName = process.env.SMTP_FROM_NAME || 'EyeCare';
+  const fromEmailAddr = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER;
+
+  const subject = `New contact message from ${userName || 'User'}`;
+  const text = `(username: ${userName || 'User'}, email: ${fromEmail}) : ${message}`;
+  const html = `<p><b>username:</b> ${userName || 'User'}<br/><b>email:</b> ${fromEmail}</p><p>${message}</p>`;
+
+  logger.info(`Attempting to send contact email to: ${toEmail}`);
+
+  const preferredPort = Number(process.env.SMTP_PORT || 0);
+  const buildConfig = (port) => ({
+    name: `Brevo (Port ${port})`,
+    host: process.env.SMTP_HOST,
+    port,
+    secure: port === 465,
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    tls: { rejectUnauthorized: false },
+    connectionTimeout: 12000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
+    dnsTimeout: 8000,
+    family: 4
+  });
+  const smtpConfigs = preferredPort ? [buildConfig(preferredPort)] : [buildConfig(2525), buildConfig(587), buildConfig(465)];
+
+  let lastError;
+  for (const config of smtpConfigs) {
+    try {
+      logger.info(`Trying ${config.name} - Host: ${config.host}, Port: ${config.port}`);
+      const transporter = nodemailer.createTransport(config);
+      await transporter.verify();
+      const result = await transporter.sendMail({
+        from: `${fromName} <${fromEmailAddr}>`,
+        to: toEmail,
+        replyTo: fromEmail,
+        subject,
+        text,
+        html
+      });
+      logger.info(`Contact email sent successfully via ${config.name}: ${result.messageId}`);
+      return result;
+    } catch (error) {
+      lastError = error;
+      logger.warn(`Failed to send contact email via ${config.name}:`, error.message);
+      continue;
+    }
+  }
+  logger.error('All SMTP configurations failed for contact email. Last error:', lastError);
+  throw new Error(`Contact email failed: ${lastError?.message || 'No SMTP provider available'}`);
+}
+
 module.exports = {
   createTransporter,
-  sendVerificationEmail
+  sendVerificationEmail,
+  sendContactEmail
 };
 
 

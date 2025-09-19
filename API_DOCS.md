@@ -60,7 +60,7 @@ Notes
       "message": "Verification successful",
       "messageCode": 200,
       "data": {
-        "user": { "id": "<id>", "email": "<email>" },
+        "user": { "id": "<id>", "email": "<email>", "streaks": 0, "avatar": "<url>" },
         "token": "<JWT>"
       }
     }
@@ -70,9 +70,43 @@ Notes
   - Body: `{ email }`
   - Response 201: `{ "success": true, "message": "OTP resent", "data": { "email": "<email>" } }`
 
+- POST `/api/auth/forgot-password`
+  - Body: `{ email }`
+  - Response 201: `{ "success": true, "message": "OTP sent to your email", "data": { "email": "<email>" } }`
+
+- POST `/api/auth/verify-reset-otp`
+  - Body: `{ email, code }`
+  - Response 200: `{ "success": true, "message": "Verification successful" }`
+
+- POST `/api/auth/reset-password`
+  - Body: `{ email, newPassword }`
+  - Response 200:
+    ```json
+    {
+      "success": true,
+      "message": "Password reset successful",
+      "messageCode": 200,
+      "data": {
+        "user": { "id": "<id>", "email": "<email>", "streaks": 0, "avatar": "<url>" },
+        "token": "<JWT>"
+      }
+    }
+    ```
+
 - POST `/api/auth/login`
   - Body: `{ email, password, language }` (language required; updates stored language)
-  - Response 202: `{ success: true, message: "Login successful", data: { user, token } }`
+  - Response 202:
+    ```json
+    {
+      "success": true,
+      "message": "Login successful",
+      "messageCode": 200,
+      "data": {
+        "user": { "id": "<id>", "email": "<email>", "streaks": 3, "avatar": "<url>" },
+        "token": "<JWT>"
+      }
+    }
+    ```
   - If the account is not verified: 403 with message `Please verify your email`.
 
 - POST `/api/auth/change-password`
@@ -88,7 +122,7 @@ Notes
       "message": "Login successful",
       "messageCode": 200,
       "data": {
-        "user": { "id": "<id>", "email": "<email>" },
+        "user": { "id": "<id>", "email": "<email>", "streaks": 1, "avatar": "<url>" },
         "token": "<JWT>"
       }
     }
@@ -103,6 +137,18 @@ Avatar
   - Body: field `avatar` = image file (jpeg/png/webp, max 5MB)
   - Response 200: `{ success: true, data: { photoUrl } }`
   - Static files: `/uploads/**` are publicly served. Set `PUBLIC_BASE_URL` to get absolute URLs in responses.
+
+Contact
+- POST `/api/user/contact` (JWT required)
+  - Body: `{ message }`
+  - Behavior: Saves the message and emails `satoriku955@gmail.com` with "(username and email) : content".
+  - Response 200: `{ success: true, message: "Message sent successfully" }`
+
+Meet a Doctor
+- POST `/api/user/meetDoctor` (JWT required)
+  - Body: `{ firstName, lastName, emailAddress, state, country }`
+  - Behavior: Stores the request for a doctor meeting.
+  - Response 200: `{ success: true, message: "Meet doctor request submitted", messageCode: 302 }`
 
 ---
 
