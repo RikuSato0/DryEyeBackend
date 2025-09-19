@@ -1,7 +1,7 @@
-const eyeRoutineReminderService = require('../repositories/eyeroutinereminder.repository');
+const eyeRoutineReminderRepo = require('../repositories/eyeroutinereminder.repository');
 const {errorResponse, successResponse} = require("../utils/responseHandler");
-const eyeRoutineReminderCompletionService = require('../repositories/eyeRoutineReminderCompletion.repository');
-const moment = require('moment'); // or use dayjs if you prefer
+const completionRepo = require('../repositories/eyeRoutineReminderCompletion.repository');
+const moment = require('moment-timezone');
 
 const {Types} = require("mongoose");
 const ApiError = require("../utils/apiError");
@@ -9,46 +9,9 @@ const ApiError = require("../utils/apiError");
 class EyeRoutineReminderController {
     async saveReminder(req, res, next) {
         try {
-            const {repeatReminder, time, instructions, type, startDate, endDate} = req.body;
+            const {repeatReminder, time, instructions, type, startDate, endDate, timezone, title, selectedEye, isActive} = req.body;
             const userId = new Types.ObjectId(req.user.userId);
-
-            // 1️⃣ Save master reminder
-            const reminder = await eyeRoutineReminderService.saveRoutineReminder({
-                userId,
-                repeatReminder,
-                time,
-                instructions,
-                type,
-                startDate,
-                endDate
-            });
-
-            // 2️⃣ Generate completion entries for each valid date
-            const completions = [];
-            let current = new Date(startDate);
-            const end = new Date(endDate);
-
-            while (current <= end) {
-                const dayOfWeek = current.getDay() === 0 ? 7 : current.getDay(); // Sunday=0 -> 7
-
-                // Check if today matches repeatReminder (or everyday=8)
-                if (repeatReminder.includes(dayOfWeek) || repeatReminder.includes(8)) {
-                    completions.push({
-                        reminderId: reminder._id,
-                        userId,
-                        type,
-                        date: current.toISOString().split('T')[0], // YYYY-MM-DD
-                        time,
-                        isCompleted: false
-                    });
-                }
-
-                current.setDate(current.getDate() + 1); // move to next day
-            }
-
-            if (completions.length > 0) {
-                await eyeRoutineReminderCompletionService.insertMany(completions);
-            }
+            const reminder = await eyeRoutineReminderRepo.saveRoutineReminder({ userId, repeatReminder, time, instructions, type, startDate, endDate, timezone, title, selectedEye, isActive });
 
             return successResponse(res, reminder, 'Eye Routine Reminder added successfully', 203, 200);
         } catch (err) {
@@ -60,26 +23,45 @@ class EyeRoutineReminderController {
     async getReminder(req, res, next) {
         try {
             const userId = req.user.userId;
-            const {type} = req.body;
-            // 1. Fetch all reminders for this user
-            const reminders = await eyeRoutineReminderService.getReminder(userId, type);
-            const formattedReminders = reminders.map(r => ({
+            const {type, period} = req.body;
+            const reminders = await eyeRoutineReminderRepo.getReminders(userId, type);
+
+            // Lazy MISSED marking: yesterday and today's past times for this user/type
+            for (const r of reminders) {
+                if (type && r.type !== type) continue; // only requested type
+                const tz = r.timezone;
+                const nowTz = moment.tz(tz);
+                const today = nowTz.format('YYYY-MM-DD');
+                const yesterday = nowTz.clone().subtract(1, 'day').format('YYYY-MM-DD');
+
+                // Bounds check with reminder start/end date in its timezone
+                const startStr = moment.tz(r.startDate, tz).format('YYYY-MM-DD');
+                const endStr = r.endDate ? moment.tz(r.endDate, tz).format('YYYY-MM-DD') : null;
+                const inRange = (d) => (d >= startStr) && (!endStr || d <= endStr);
+
+                // Yesterday missed
+                const yDow = parseInt(nowTz.clone().subtract(1, 'day').format('E')); // 1..7
+                const yMatches = (r.repeatReminder.includes(8) || r.repeatReminder.includes(yDow)) && inRange(yesterday);
+                if (yMatches) {
+                    await completionRepo.ensureMissedIfAbsent(r._id, r.userId, r.type, yesterday, r.time);
+                }
+
+                // Today missed if scheduled time already passed
+                const tDow = parseInt(nowTz.format('E'));
+                const tMatches = (r.repeatReminder.includes(8) || r.repeatReminder.includes(tDow)) && inRange(today);
+                const nowTime = nowTz.format('HH:mm');
+                if (tMatches && r.time < nowTime) {
+                    await completionRepo.ensureMissedIfAbsent(r._id, r.userId, r.type, today, r.time);
+                }
+            }
+
+            const data = reminders.map(r => ({
                 ...r.toObject(),
-                startDate: moment(r.startDate).format("YYYY-MM-DD"),
-                endDate: moment(r.endDate).format("YYYY-MM-DD")
+                startDate: moment(r.startDate).format('YYYY-MM-DD'),
+                endDate: r.endDate ? moment(r.endDate).format('YYYY-MM-DD') : null
             }));
 
-            // 2. Fetch completion records for today (or all, depending on your need)
-            // check if today’s reminder is completed
-            const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-            const completion = await eyeRoutineReminderCompletionService.findOne(userId, today, type);
-
-            const isComplete = !!completion?.isCompleted;
-
-            return successResponse(res, {
-                reminders: formattedReminders,
-                isComplete
-            }, 'Eye Routine Reminder fetch successfully', 203, 200);
+            return successResponse(res, { reminders: data }, 'Eye Routine Reminder fetch successfully', 203, 200);
         } catch (err) {
             return errorResponse(res, err.message, 400, err.messageCode);
         }
@@ -90,8 +72,8 @@ class EyeRoutineReminderController {
             const userId = req.user.userId;
             const reminderId = req.params.id;
 
-            await eyeRoutineReminderService.deleteReminder(userId, reminderId);
-            await eyeRoutineReminderCompletionService.deleteMany(reminderId, userId);
+            await eyeRoutineReminderRepo.deleteReminder(userId, reminderId);
+            await completionRepo.deleteMany(reminderId, userId);
             return successResponse(res, {}, 'Eye Routine Reminder deleted successfully', 203, 200);
         } catch (err) {
             return errorResponse(res, err.message, 400, err.messageCode);
@@ -101,16 +83,10 @@ class EyeRoutineReminderController {
     async updateCompleteStatus(req, res, next) {
         try {
             const userId = req.user.userId;
-            const {type, isComplete} = req.body;
-
-            // Find all reminders of this type for user
-            const reminders = await eyeRoutineReminderService.getReminder(userId, type);
-            if (!reminders || reminders.length === 0) {
-                throw new ApiError(404, 'No reminders found for this type', 701);
-            }
-            const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-            const response = await eyeRoutineReminderCompletionService.updateMany(userId, type, today, isComplete);
-            return successResponse(res, response, 'Eye Routine Reminder updated successfully', 203, 200);
+            const { id, occurrenceDate, scheduledTime, status } = req.body;
+            if (!id || !occurrenceDate || !scheduledTime || !status) throw new ApiError(400, 'id, occurrenceDate, scheduledTime, status are required', 701);
+            await completionRepo.upsertOccurrence(new Types.ObjectId(id), new Types.ObjectId(userId), undefined, occurrenceDate, scheduledTime, status);
+            return successResponse(res, {}, 'Eye Routine Reminder updated successfully', 203, 200);
         } catch (err) {
             return errorResponse(res, err.message, 400, err.messageCode);
         }

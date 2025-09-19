@@ -6,9 +6,9 @@ router.get('/', (req, res) => {
     res.send('✅ Eye Care API is running');
 });
 
-router.post('/createReminder', eyeRoutineReminderController.saveReminder);
-router.post('/getReminder', eyeRoutineReminderController.getReminder);
-router.delete('/deleteReminder/:id', eyeRoutineReminderController.deleteReminder);
-router.post('/updateReminderStatus', eyeRoutineReminderController.updateCompleteStatus);
+router.post('/create', eyeRoutineReminderController.saveReminder);
+router.post('/get', eyeRoutineReminderController.getReminder);
+router.delete('/delete/:id', eyeRoutineReminderController.deleteReminder);
+router.post('/updateStatus', eyeRoutineReminderController.updateCompleteStatus);
 
 module.exports = router;

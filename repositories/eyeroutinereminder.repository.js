@@ -7,8 +7,10 @@ class EyeRoutineReminderRepository {
         return await EyeRoutineReminder.create(postData);
     }
 
-    async getReminder(userId, type) {
-        return await EyeRoutineReminder.find({ userId, type }).sort({ date: -1 });
+    async getReminders(userId, type) {
+        const filter = { userId };
+        if (type) filter.type = type;
+        return await EyeRoutineReminder.find(filter).sort({ createdAt: -1 });
     }
 
     async deleteReminder(userId, id) {
@@ -18,17 +20,8 @@ class EyeRoutineReminderRepository {
         });
     }
 
-    async updateCompleteStatus(userId, id, status) {
-        return await EyeRoutineReminder.findOneAndUpdate(
-            {
-                _id: new Types.ObjectId(id),
-                userId: new Types.ObjectId(userId)
-            },
-            {
-                $set: { isComplete: status }
-            },
-            { new: true } // return updated document
-        );
+    async updateReminder(userId, id, update) {
+        return await EyeRoutineReminder.findOneAndUpdate({ _id: new Types.ObjectId(id), userId: new Types.ObjectId(userId) }, update, { new: true });
     }
 }
 

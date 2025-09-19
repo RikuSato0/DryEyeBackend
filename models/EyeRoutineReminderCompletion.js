@@ -6,20 +6,25 @@ const EyeRoutineReminderCompletionSchema = new mongoose.Schema({
     type: {
         type: String,
         enum: [
-            'BLINK_TRAINING',
-            'EYE_DROP_TIMER',
-            '20_20_20_TIMER',
+            'BASIC_BLINK',
+            'ADVANCED_BLINK',
+            'DROP_TIMER',
             'WARM_COMPRESS',
-            'EYE_CLEANING',
-            'LAUGH_EXERCISE'
+            'EYE_LID_CLEANING',
+            'HOME_WORKOUT',
+            'ADVANCED_TRAINING',
+            'OMEGA_3'
         ],
         required: true
     },
-    date: { type: String, required: true }, // "YYYY-MM-DD" → the scheduled day
-    time: { type: String, required: true }, // "HH:mm" → matches reminder.time
-
-    isCompleted: { type: Boolean, default: false },
-    completedAt: { type: Date }
+    occurrenceDate: { type: String, required: true }, // YYYY-MM-DD in reminder.tz
+    scheduledTime: { type: String, required: true }, // HH:mm
+    status: { type: String, enum: ['COMPLETED','SKIPPED','MISSED'], default: 'MISSED' },
+    recordedAt: { type: Date }
 }, { timestamps: true });
+
+EyeRoutineReminderCompletionSchema.index({ reminderId: 1, occurrenceDate: 1, scheduledTime: 1 }, { unique: true });
+EyeRoutineReminderCompletionSchema.index({ userId: 1, occurrenceDate: 1 });
+EyeRoutineReminderCompletionSchema.index({ status: 1, occurrenceDate: 1 });
 
 module.exports = mongoose.model('EyeRoutineReminderCompletion', EyeRoutineReminderCompletionSchema, 'eye_routine_reminder_completion');

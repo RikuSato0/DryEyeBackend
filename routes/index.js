@@ -21,7 +21,7 @@ router.use('/auth', authRoutes);
 router.use('/user', authenticateToken, userRoutes);
 router.use('/info', authenticateToken, infoRoutes);
 router.use('/eye-care', eyeCareRoute);
-router.use('/eyeCareRoutineReminder', authenticateToken, eyeCareReminderRoutes);
+router.use('/reminder', authenticateToken, eyeCareReminderRoutes);
 router.use('/training', authenticateToken, trainingRoute);
 router.use('/forum', authenticateToken, forumRoutes);
 router.use('/test', testRoutes);

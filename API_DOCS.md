@@ -254,36 +254,25 @@ BLINK_TRAINING | EYE_DROP_TIMER | 20_20_20_TIMER | WARM_COMPRESS | EYE_CLEANING 
 
 ## Eye Routine Reminders (JWT required)
 
-- POST `/api/eyeCareRoutineReminder/createReminder`
-  - Body:
-    ```json
-    {
-      "repeatReminder": [1,2,3,4,5,6,7],
-      "time": "HH:mm",
-      "instructions": "optional",
-      "type": "BLINK_TRAINING",
-      "startDate": "YYYY-MM-DD",
-      "endDate": "YYYY-MM-DD"
-    }
-    ```
+Unified model (supports multiple reminders per type and per-occurrence history)
+- Reminder fields: { id, userId, type, timezone, repeatReminder:[1..7|8], time:"HH:mm", startDate, endDate?, title?, instructions?, selectedEye?, isActive }
+- Occurrence fields: { reminderId, userId, occurrenceDate:"YYYY-MM-DD" (in tz), scheduledTime:"HH:mm", status:"COMPLETED|SKIPPED|MISSED", recordedAt }
+
+Endpoints
+- POST `/api/reminder/create`
+  - Body: `{ repeatReminder, time, timezone, instructions?, title?, type, startDate, endDate?, selectedEye?, isActive? }`
   - Response 200: `{ success: true, message: "Eye Routine Reminder added successfully", data: { ...reminder } }`
 
-- POST `/api/eyeCareRoutineReminder/getReminder`
-  - Body: `{ type }`
-  - Response 200:
-    ```json
-    {
-      "success": true,
-      "message": "Eye Routine Reminder fetch successfully",
-      "data": { "reminders": [/*...*/], "isComplete": false }
-    }
-    ```
+- POST `/api/reminder/get`
+  - Body: `{ type?, period?: "today" }`
+  - Behavior: lazily marks yesterday’s missed occurrences (by reminder timezone) before returning data
+  - Response 200: `{ success: true, data: { reminders: [ ... ] } }`
 
-- DELETE `/api/eyeCareRoutineReminder/deleteReminder/:id`
+- DELETE `/api/reminder/delete/:id`
   - Response 200: `{ success: true, message: "Eye Routine Reminder deleted successfully" }`
 
-- POST `/api/eyeCareRoutineReminder/updateReminderStatus`
-  - Body: `{ type, isComplete:boolean }`
+- POST `/api/reminder/updateStatus`
+  - Body: `{ id, occurrenceDate, scheduledTime, status:"COMPLETED|SKIPPED|MISSED" }`
   - Response 200: `{ success: true, message: "Eye Routine Reminder updated successfully" }`
 
 ---
