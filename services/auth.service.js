@@ -4,6 +4,7 @@ const { successResponse, errorResponse } = require('../utils/responseHandler');
 const { generateOtp, hashOtp, compareOtp, getExpiryDate, isExpired, isCooldownOver } = require('../utils/otp');
 const { sendVerificationEmail } = require('../utils/mailer');
 const { sendVerificationEmail: sendVerificationEmailAlt } = require('../utils/mailer-alternative');
+const logger = require('../utils/logger');
 
 const OTP_MAX_ATTEMPTS = Number(process.env.OTP_MAX_ATTEMPTS || 5);
 const OTP_DAILY_RESEND_LIMIT = Number(process.env.OTP_DAILY_RESEND_LIMIT || 5);

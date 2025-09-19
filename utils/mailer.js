@@ -136,7 +136,7 @@ async function sendVerificationEmail(toEmail, code) {
     try {
       logger.info(`Trying ${config.name} - Host: ${config.host}, Port: ${config.port}`);
       
-      const transporter = nodemailer.createTransporter(config);
+      const transporter = nodemailer.createTransport(config);
       
       // Verify connection first
       await transporter.verify();

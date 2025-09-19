@@ -63,7 +63,7 @@ function createTransporter() {
       if (config.name === 'SendGrid' && !process.env.SENDGRID_API_KEY) continue;
       if (config.name === 'Brevo' && !SMTP_USER) continue;
 
-      const transporter = nodemailer.createTransporter(config);
+      const transporter = nodemailer.createTransport(config);
       logger.info(`Created ${config.name} transporter`);
       return { transporter, configName: config.name };
     } catch (error) {
@@ -85,7 +85,7 @@ async function sendVerificationEmail(toEmail, code) {
       if (config.name === 'SendGrid' && !process.env.SENDGRID_API_KEY) continue;
       if (config.name === 'Brevo' && !SMTP_USER) continue;
 
-      const transporter = nodemailer.createTransporter(config);
+      const transporter = nodemailer.createTransport(config);
       
       const fromName = SMTP_FROM_NAME || 'EyeCare';
       const fromEmail = config.name === 'Brevo' ? (SMTP_FROM_EMAIL || SMTP_USER) : 
@@ -157,7 +157,7 @@ async function testSmtpConnection() {
         continue;
       }
 
-      const transporter = nodemailer.createTransporter(config);
+      const transporter = nodemailer.createTransport(config);
       await transporter.verify();
       results.push({ provider: config.name, status: 'success' });
     } catch (error) {
