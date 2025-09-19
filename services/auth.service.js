@@ -158,7 +158,22 @@ class AuthService {
     const email = decoded.email || '';
     const name = decoded.name || decoded.displayName || '';
     const picture = decoded.picture || '';
-    const providerId = (decoded.firebase && decoded.firebase.sign_in_provider) || provider || 'unknown';
+    const providerIdRaw = (decoded.firebase && decoded.firebase.sign_in_provider) || provider || 'unknown';
+
+    // Normalize provider to schema enum values
+    const providerMap = {
+      'google.com': 'google',
+      'apple.com': 'apple',
+      'facebook.com': 'facebook',
+      google: 'google',
+      apple: 'apple',
+      facebook: 'facebook'
+    };
+    const providerId = providerMap[providerIdRaw] || null;
+
+    if (!providerId) {
+      throw new ApiError(400, `Unsupported provider: ${providerIdRaw}`, 504);
+    }
 
     if (!email) {
       throw new ApiError(400, 'Email is required from provider', 503);
