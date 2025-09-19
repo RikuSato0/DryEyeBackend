@@ -78,6 +78,22 @@ Notes
   - Body: `{ email, oldPassword, newPassword }`
   - Response 203: `{ success: true, message: "Password updated successfully" }`
 
+- POST `/api/auth/firebase`
+  - Body: `{ idToken: string, provider?: "google"|"apple"|"facebook" }`
+  - Response 200:
+    ```json
+    {
+      "success": true,
+      "message": "Login successful",
+      "messageCode": 200,
+      "data": {
+        "user": { "id": "<id>", "email": "<email>" },
+        "token": "<JWT>"
+      }
+    }
+    ```
+  - Errors: 400 invalid body, 401 invalid/expired idToken, 501 server not configured
+
 ---
 
 ## User (JWT required)

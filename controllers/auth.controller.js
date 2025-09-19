@@ -95,6 +95,25 @@ class AuthController {
       return errorResponse(res, err.message, 400, err.messageCode);
     }
   }
+
+  async firebaseLogin(req, res, next) {
+    try {
+      const { idToken, provider } = req.body || {};
+      if (!idToken) {
+        return errorResponse(res, 'idToken is required', 400, 400);
+      }
+      const { user, token } = await authService.firebaseLogin(idToken, provider);
+      return successResponse(res, {
+        user: {
+          id: user._id,
+          email: user.email
+        },
+        token
+      }, 'Login successful', 200, 200);
+    } catch (err) {
+      return errorResponse(res, err.message, 400, err.messageCode);
+    }
+  }
 }
 
 module.exports = new AuthController();

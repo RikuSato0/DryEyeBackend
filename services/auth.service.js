@@ -5,6 +5,8 @@ const { generateOtp, hashOtp, compareOtp, getExpiryDate, isExpired, isCooldownOv
 const { sendVerificationEmail } = require('../utils/mailer');
 const { sendVerificationEmail: sendVerificationEmailAlt } = require('../utils/mailer-alternative');
 const logger = require('../utils/logger');
+const { initFirebaseAdmin } = require('../config/firebase');
+const jwt = require('jsonwebtoken');
 
 const OTP_MAX_ATTEMPTS = Number(process.env.OTP_MAX_ATTEMPTS || 5);
 const OTP_DAILY_RESEND_LIMIT = Number(process.env.OTP_DAILY_RESEND_LIMIT || 5);
@@ -137,6 +139,64 @@ class AuthService {
       await sendVerificationEmailAlt(user.email, otp);
     }
     return { email: user.email };
+  }
+
+  async firebaseLogin(idToken, provider) {
+    const admin = initFirebaseAdmin();
+    if (!admin) {
+      throw new ApiError(500, 'Social login is not configured on server', 501);
+    }
+
+    let decoded;
+    try {
+      decoded = await admin.auth().verifyIdToken(idToken, { checkRevoked: false });
+    } catch (e) {
+      throw new ApiError(401, 'Invalid Firebase ID token', 502);
+    }
+
+    const firebaseUid = decoded.uid;
+    const email = decoded.email || '';
+    const name = decoded.name || decoded.displayName || '';
+    const picture = decoded.picture || '';
+    const providerId = (decoded.firebase && decoded.firebase.sign_in_provider) || provider || 'unknown';
+
+    if (!email) {
+      throw new ApiError(400, 'Email is required from provider', 503);
+    }
+
+    let user = await userRepository.findByEmail(email);
+    if (!user) {
+      // Create user with a placeholder password (will be hashed by pre-save)
+      const randomPassword = Math.random().toString(36).slice(-12) + '!A9';
+      user = await userRepository.create({
+        email,
+        password: randomPassword,
+        userName: name,
+        isVerified: true,
+        firebaseUid,
+        authProvider: providerId,
+        photoUrl: picture,
+        lastLoginAt: new Date()
+      });
+    } else {
+      user.isVerified = true;
+      user.firebaseUid = firebaseUid;
+      user.authProvider = providerId;
+      user.photoUrl = picture || user.photoUrl;
+      user.lastLoginAt = new Date();
+      await user.save();
+    }
+
+    const token = jwt.sign(
+      {
+        userId: user._id,
+        email: user.email
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
+    );
+
+    return { user, token };
   }
 }
 

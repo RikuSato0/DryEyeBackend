@@ -72,6 +72,27 @@ const UserSchema = new mongoose.Schema({
   }
 });
 
+// Social auth metadata
+UserSchema.add({
+  firebaseUid: {
+    type: String,
+    default: null
+  },
+  authProvider: {
+    type: String,
+    enum: [null, 'google', 'apple', 'facebook'],
+    default: null
+  },
+  photoUrl: {
+    type: String,
+    default: null
+  },
+  lastLoginAt: {
+    type: Date,
+    default: null
+  }
+});
+
 UserSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   try {

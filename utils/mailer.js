@@ -69,7 +69,7 @@ async function sendVerificationEmail(toEmail, code) {
   const fromName = process.env.SMTP_FROM_NAME || 'EyeCare';
   const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER;
 
-  const subject = 'Your EyeCare verification code';
+  const subject = 'Your DryEyeCare verification code';
   const text = `Your verification code is ${code}. It expires in ${process.env.OTP_TTL_MINUTES || 10} minutes.`;
   const html = `<p>Your verification code is <b>${code}</b>.</p><p>It expires in ${process.env.OTP_TTL_MINUTES || 10} minutes.</p>`;
 
