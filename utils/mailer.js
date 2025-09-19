@@ -75,60 +75,30 @@ async function sendVerificationEmail(toEmail, code) {
 
   logger.info(`Attempting to send verification email to: ${toEmail}`);
 
-  // Try multiple SMTP configurations
-  const smtpConfigs = [
-    // Primary Brevo configuration
-    {
-      name: 'Brevo (Port 587)',
-      host: process.env.SMTP_HOST,
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      },
-      tls: { rejectUnauthorized: false, ciphers: 'SSLv3' },
-      connectionTimeout: 30000,
-      greetingTimeout: 15000,
-      socketTimeout: 30000,
-      dnsTimeout: 10000,
-      family: 4
+  // Build SMTP configurations (prefer explicit port, otherwise fast-fail order with 2525 first)
+  const preferredPort = Number(process.env.SMTP_PORT || 0);
+
+  const buildConfig = (port) => ({
+    name: `Brevo (Port ${port})`,
+    host: process.env.SMTP_HOST,
+    port,
+    secure: port === 465,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS
     },
-    // Alternative Brevo configuration with port 465
-    {
-      name: 'Brevo (Port 465)',
-      host: process.env.SMTP_HOST,
-      port: 465,
-      secure: true,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      },
-      tls: { rejectUnauthorized: false },
-      connectionTimeout: 30000,
-      greetingTimeout: 15000,
-      socketTimeout: 30000,
-      dnsTimeout: 10000,
-      family: 4
-    },
-    // Alternative Brevo configuration with port 2525
-    {
-      name: 'Brevo (Port 2525)',
-      host: process.env.SMTP_HOST,
-      port: 2525,
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      },
-      tls: { rejectUnauthorized: false },
-      connectionTimeout: 30000,
-      greetingTimeout: 15000,
-      socketTimeout: 30000,
-      dnsTimeout: 10000,
-      family: 4
-    }
-  ];
+    tls: { rejectUnauthorized: false },
+    // Tighter timeouts to avoid long delays when a port is blocked
+    connectionTimeout: 12000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
+    dnsTimeout: 8000,
+    family: 4
+  });
+
+  const smtpConfigs = preferredPort
+    ? [buildConfig(preferredPort)]
+    : [buildConfig(2525), buildConfig(587), buildConfig(465)];
 
   let lastError;
 
