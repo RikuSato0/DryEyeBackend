@@ -1,0 +1,27 @@
+const express = require('express');
+const router = express.Router();
+const app = express();
+
+const authRoutes = require('./auth.routes');
+const userRoutes = require('./user.routes');
+const infoRoutes = require('./info.routes');
+const eyeCareRoute = require('./eyeCare.routes');
+const trainingRoute = require('./training.routes');
+const forumRoutes = require('./forum.routes');
+const eyeCareReminderRoutes = require('./eyeCareReminder.routes');
+
+const authenticateToken = require('../middlewares/authMiddleware');
+
+router.get('/', (req, res) => {
+  res.send('✅ API is running');
+});
+
+router.use('/auth', authRoutes);
+router.use('/user', authenticateToken, userRoutes);
+router.use('/info', authenticateToken, infoRoutes);
+router.use('/eye-care', eyeCareRoute);
+router.use('/eyeCareRoutineReminder', authenticateToken, eyeCareReminderRoutes);
+router.use('/training', authenticateToken, trainingRoute);
+router.use('/forum', authenticateToken, forumRoutes);
+
+module.exports = router;
