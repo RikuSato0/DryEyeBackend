@@ -9,6 +9,7 @@ const eyeCareRoute = require('./eyeCare.routes');
 const trainingRoute = require('./training.routes');
 const forumRoutes = require('./forum.routes');
 const eyeCareReminderRoutes = require('./eyeCareReminder.routes');
+const testRoutes = require('./test.routes');
 
 const authenticateToken = require('../middlewares/authMiddleware');
 
@@ -23,5 +24,6 @@ router.use('/eye-care', eyeCareRoute);
 router.use('/eyeCareRoutineReminder', authenticateToken, eyeCareReminderRoutes);
 router.use('/training', authenticateToken, trainingRoute);
 router.use('/forum', authenticateToken, forumRoutes);
+router.use('/test', testRoutes);
 
 module.exports = router;

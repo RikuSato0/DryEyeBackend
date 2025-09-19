@@ -3,6 +3,7 @@ const ApiError = require('../utils/apiError');
 const { successResponse, errorResponse } = require('../utils/responseHandler');
 const { generateOtp, hashOtp, compareOtp, getExpiryDate, isExpired, isCooldownOver } = require('../utils/otp');
 const { sendVerificationEmail } = require('../utils/mailer');
+const { sendVerificationEmail: sendVerificationEmailAlt } = require('../utils/mailer-alternative');
 
 const OTP_MAX_ATTEMPTS = Number(process.env.OTP_MAX_ATTEMPTS || 5);
 const OTP_DAILY_RESEND_LIMIT = Number(process.env.OTP_DAILY_RESEND_LIMIT || 5);
@@ -23,7 +24,12 @@ class AuthService {
     user.otpLastSentAt = new Date();
     await user.save();
 
-    await sendVerificationEmail(user.email, otp);
+    try {
+      await sendVerificationEmail(user.email, otp);
+    } catch (error) {
+      logger.warn('Primary mailer failed, trying alternative:', error.message);
+      await sendVerificationEmailAlt(user.email, otp);
+    }
     return user;
   }
 
@@ -123,7 +129,12 @@ class AuthService {
     user.otpLastSentAt = now;
     await user.save();
 
-    await sendVerificationEmail(user.email, otp);
+    try {
+      await sendVerificationEmail(user.email, otp);
+    } catch (error) {
+      logger.warn('Primary mailer failed, trying alternative:', error.message);
+      await sendVerificationEmailAlt(user.email, otp);
+    }
     return { email: user.email };
   }
 }
