@@ -5,9 +5,12 @@ const jwt = require('jsonwebtoken');
 class AuthController {
   async register(req, res, next) {
     try {
-      const {email, password, userName, country, timezone} = req.body;
+      const {email, password, userName, country, timezone, language} = req.body;
+      if (!language) {
+        return errorResponse(res, 'language is required', 400, 400);
+      }
       console.log(email, password, userName, country, timezone,'register');
-      const user = await authService.register(email, password, userName,country, timezone);
+      const user = await authService.register(email, password, userName,country, timezone, language);
       return successResponse(res, {
         user: {
           id: user._id,
@@ -35,8 +38,11 @@ class AuthController {
 
   async login(req, res, next) {
     try {
-      const { email, password } = req.body;
-      const user = await authService.login(email, password);
+      const { email, password, language } = req.body;
+      if (!language) {
+        return errorResponse(res, 'language is required', 400, 400);
+      }
+      const user = await authService.login(email, password, language);
       // Generate JWT token
       const token = jwt.sign(
           {
@@ -98,11 +104,14 @@ class AuthController {
 
   async firebaseLogin(req, res, next) {
     try {
-      const { idToken, provider } = req.body || {};
+      const { idToken, provider, language } = req.body || {};
       if (!idToken) {
         return errorResponse(res, 'idToken is required', 400, 400);
       }
-      const { user, token } = await authService.firebaseLogin(idToken, provider);
+      if (!language) {
+        return errorResponse(res, 'language is required', 400, 400);
+      }
+      const { user, token } = await authService.firebaseLogin(idToken, provider, language);
       return successResponse(res, {
         user: {
           id: user._id,

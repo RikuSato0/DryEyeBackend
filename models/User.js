@@ -90,6 +90,29 @@ UserSchema.add({
   lastLoginAt: {
     type: Date,
     default: null
+  },
+  streaks: {
+    type: Number,
+    default: 0
+  }
+});
+
+// Subscription information
+UserSchema.add({
+  subscription: {
+    plan: {
+      type: String,
+      enum: ['free', 'standard_monthly', 'premium_monthly', 'premium_yearly'],
+      default: 'free'
+    },
+    startedAt: {
+      type: Date,
+      default: null
+    },
+    expiresAt: {
+      type: Date,
+      default: null
+    }
   }
 });
 

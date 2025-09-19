@@ -37,7 +37,7 @@ Notes
 ## Authentication (Public)
 
 - POST `/api/auth/register`
-  - Body: `{ email, password, userName, country, timezone }`
+  - Body: `{ email, password, userName, country, timezone, language }` (language required)
   - Response 201:
     ```json
     {
@@ -49,6 +49,7 @@ Notes
       }
     }
     ```
+  - Notes: server sets a default avatar at `photoUrl` (DEFAULT_AVATAR_URL or `/uploads/default.png`).
 
 - POST `/api/auth/verify-otp`
   - Body: `{ email, code }`
@@ -70,7 +71,7 @@ Notes
   - Response 201: `{ "success": true, "message": "OTP resent", "data": { "email": "<email>" } }`
 
 - POST `/api/auth/login`
-  - Body: `{ email, password }`
+  - Body: `{ email, password, language }` (language required; updates stored language)
   - Response 202: `{ success: true, message: "Login successful", data: { user, token } }`
   - If the account is not verified: 403 with message `Please verify your email`.
 
@@ -79,7 +80,7 @@ Notes
   - Response 203: `{ success: true, message: "Password updated successfully" }`
 
 - POST `/api/auth/firebase`
-  - Body: `{ idToken: string, provider?: "google"|"apple"|"facebook" }`
+  - Body: `{ idToken: string, provider?: "google"|"apple"|"facebook", language }` (language required)
   - Response 200:
     ```json
     {
@@ -93,6 +94,15 @@ Notes
     }
     ```
   - Errors: 400 invalid body, 401 invalid/expired idToken, 501 server not configured
+  - Notes: if the provider doesn't supply a picture, server sets the default avatar.
+
+Avatar
+- PUT `/api/user/avatar` (JWT required)
+  - Headers: `Authorization: Bearer <token>`
+  - Content-Type: `multipart/form-data`
+  - Body: field `avatar` = image file (jpeg/png/webp, max 5MB)
+  - Response 200: `{ success: true, data: { photoUrl } }`
+  - Static files: `/uploads/**` are publicly served. Set `PUBLIC_BASE_URL` to get absolute URLs in responses.
 
 ---
 
@@ -108,6 +118,15 @@ Notes
 - PUT `/api/user/userName`
   - Body: `{ userName }`
   - Response 200: `{ success: true, message: "Profile updated successfully" }`
+
+- PUT `/api/user/email`
+  - Body: `{ email }`
+  - Response 200: `{ success: true, message: "Profile updated successfully" }`
+
+- PUT `/api/user/subscription`
+  - Body: `{ plan: "free|standard|premium", period: "monthly|yearly" }`
+  - Rules: `standard` only supports `monthly`; `premium` supports `monthly|yearly`. Server sets `expiresAt` to +1 month (monthly) or +12 months (yearly). When expired, backend auto-downgrades to `free` on next auth/profile call.
+  - Response 200: `{ success: true, data: { subscription }, message: "Profile updated successfully" }`
 
 - DELETE `/api/user/deleteAccount`
   - Response 200: `{ success: true, message: "Profile deleted successfully" }`

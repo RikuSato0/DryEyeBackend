@@ -5,6 +5,7 @@ const userRepository = require('../repositories/user.repository');
 const {successResponse, errorResponse} = require("../utils/responseHandler");
 const interestRepository = require('../repositories/interest.repository');
 const feedbackRepository = require('../repositories/feedback.repository');
+const path = require('path');
 
 const {Types} = require("mongoose");
 
@@ -13,6 +14,12 @@ class UserController {
     try {
       const email = req.user.email;
       const user = await userRepository.findProfileByEmail(email);
+      if (user && user.subscription && user.subscription.expiresAt && new Date(user.subscription.expiresAt) < new Date()) {
+        // Lazy downgrade on profile fetch
+        await userRepository.updateSubscription(user._id, { plan: 'free', startedAt: user.subscription.startedAt, expiresAt: null });
+        user.subscription.plan = 'free';
+        user.subscription.expiresAt = null;
+      }
       return successResponse(res, {user}, 'Profile updated successfully', 200, 200);
 
     } catch (err) {
@@ -94,6 +101,71 @@ class UserController {
       if (!user) throw new ApiError(404, 'User not found', 701);
 
       return successResponse(res, {}, 'Profile updated successfully', 203, 200);
+
+    } catch (err) {
+      return errorResponse(res, err.message, 400, err.messageCode);
+    }
+  }
+
+  async updateEmail(req, res, next) {
+    try {
+      const { email } = req.body;
+      if (!email) throw new ApiError(400, 'Email is required', 706);
+      const user = await userRepository.updateEmail(req.user.userId, email);
+      if (!user) throw new ApiError(404, 'User not found', 701);
+      return successResponse(res, {}, 'Profile updated successfully', 200, 200);
+    } catch (err) {
+      return errorResponse(res, err.message, 400, err.messageCode);
+    }
+  }
+
+  async updateSubscription(req, res, next) {
+    try {
+      const { plan, period } = req.body;
+      let normalizedPlan = plan;
+      if (plan === 'standard') normalizedPlan = `standard_${period}`;
+      if (plan === 'premium') normalizedPlan = `premium_${period}`;
+
+      const allowed = ['free','standard_monthly','premium_monthly','premium_yearly'];
+      if (!allowed.includes(normalizedPlan)) {
+        throw new ApiError(400, 'Invalid plan', 707);
+      }
+
+      const now = new Date();
+      let expiresAt = null;
+      if (normalizedPlan !== 'free') {
+        const months = normalizedPlan.endsWith('yearly') ? 12 : 1; // standard only monthly
+        expiresAt = new Date(now);
+        expiresAt.setMonth(expiresAt.getMonth() + months);
+      }
+
+      const subscription = { plan: normalizedPlan, startedAt: now, expiresAt };
+      const user = await userRepository.updateSubscription(req.user.userId, subscription);
+      if (!user) throw new ApiError(404, 'User not found', 701);
+      return successResponse(res, { subscription: user.subscription }, 'Profile updated successfully', 200, 200);
+    } catch (err) {
+      return errorResponse(res, err.message, 400, err.messageCode);
+    }
+  }
+
+  async updateAvatar(req, res, next) {
+    try {
+      if (!req.file) {
+        throw new ApiError(400, 'Avatar image is required', 702);
+      }
+      const publicBase = process.env.PUBLIC_BASE_URL || '';
+      // Build public URL; assume Nginx serves /uploads
+      const relativePath = path.join('uploads', 'avatars', path.basename(req.file.path));
+      const photoUrl = publicBase ? `${publicBase}/${relativePath.replace(/\\/g, '/')}` : `/${relativePath.replace(/\\/g, '/')}`;
+
+      const user = await userRepository.model.findOneAndUpdate(
+        { _id: req.user.userId },
+        { photoUrl },
+        { new: true }
+      );
+      if (!user) throw new ApiError(404, 'User not found', 701);
+
+      return successResponse(res, { photoUrl }, 'Profile updated successfully', 200, 200);
 
     } catch (err) {
       return errorResponse(res, err.message, 400, err.messageCode);

@@ -12,12 +12,13 @@ const OTP_MAX_ATTEMPTS = Number(process.env.OTP_MAX_ATTEMPTS || 5);
 const OTP_DAILY_RESEND_LIMIT = Number(process.env.OTP_DAILY_RESEND_LIMIT || 5);
 
 class AuthService {
-  async register(email, password, userName, country, timezone) {
+  async register(email, password, userName, country, timezone, language) {
     const userExists = await userRepository.findByEmail(email);
     if (userExists) {
       throw new ApiError(400, 'The email address is already registered', 408);
     }
-    const user = await userRepository.create({ email, password, userName, country, timezone, isVerified: false });
+    const defaultAvatar = process.env.DEFAULT_AVATAR_URL || '/uploads/default.png';
+    const user = await userRepository.create({ email, password, userName, country, timezone, language, isVerified: false, photoUrl: defaultAvatar });
 
     const otp = generateOtp();
     user.otpCodeHash = await hashOtp(otp);
@@ -36,7 +37,7 @@ class AuthService {
     return user;
   }
 
-  async login(email, password) {
+  async login(email, password, language) {
     const user = await userRepository.findByEmail(email);
     if (!user) {
       throw new ApiError(401, 'Incorrect email or password', 406);
@@ -49,7 +50,30 @@ class AuthService {
     if (!user.isVerified) {
       throw new ApiError(403, 'Please verify your email', 409);
     }
-
+    // Auto-downgrade if subscription expired
+    if (user.subscription && user.subscription.expiresAt && new Date(user.subscription.expiresAt) < new Date()) {
+      user.subscription = { plan: 'free', startedAt: user.subscription.startedAt, expiresAt: null };
+    }
+    // Update streaks based on lastLoginAt
+    const now = new Date();
+    const last = user.lastLoginAt ? new Date(user.lastLoginAt) : null;
+    if (last) {
+      const lastDay = new Date(last.getFullYear(), last.getMonth(), last.getDate());
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const diffDays = Math.round((today - lastDay) / (24 * 60 * 60 * 1000));
+      if (diffDays === 1) {
+        user.streaks = (user.streaks || 0) + 1;
+      } else if (diffDays > 1) {
+        user.streaks = 0;
+      }
+    } else {
+      user.streaks = 0;
+    }
+    user.lastLoginAt = now;
+    if (language && user.language !== language) {
+      user.language = language;
+    }
+    await user.save();
     return user;
   }
 
@@ -93,6 +117,9 @@ class AuthService {
     }
 
     user.isVerified = true;
+    // initialize streaks and last login at verification time
+    user.streaks = 0;
+    user.lastLoginAt = new Date();
     user.otpCodeHash = null;
     user.otpExpiresAt = null;
     user.otpAttemptCount = 0;
@@ -141,7 +168,7 @@ class AuthService {
     return { email: user.email };
   }
 
-  async firebaseLogin(idToken, provider) {
+  async firebaseLogin(idToken, provider, language) {
     const admin = initFirebaseAdmin();
     if (!admin) {
       throw new ApiError(500, 'Social login is not configured on server', 501);
@@ -183,6 +210,7 @@ class AuthService {
     if (!user) {
       // Create user with a placeholder password (will be hashed by pre-save)
       const randomPassword = Math.random().toString(36).slice(-12) + '!A9';
+      const defaultAvatar = process.env.DEFAULT_AVATAR_URL || '/uploads/default.png';
       user = await userRepository.create({
         email,
         password: randomPassword,
@@ -190,15 +218,38 @@ class AuthService {
         isVerified: true,
         firebaseUid,
         authProvider: providerId,
-        photoUrl: picture,
-        lastLoginAt: new Date()
+        photoUrl: picture || defaultAvatar,
+        lastLoginAt: new Date(),
+        streaks: 0,
+        language
       });
     } else {
       user.isVerified = true;
       user.firebaseUid = firebaseUid;
       user.authProvider = providerId;
       user.photoUrl = picture || user.photoUrl;
-      user.lastLoginAt = new Date();
+      // Streaks update on social login
+      const now = new Date();
+      const last = user.lastLoginAt ? new Date(user.lastLoginAt) : null;
+      if (last) {
+        const lastDay = new Date(last.getFullYear(), last.getMonth(), last.getDate());
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const diffDays = Math.round((today - lastDay) / (24 * 60 * 60 * 1000));
+        if (diffDays === 1) {
+          user.streaks = (user.streaks || 0) + 1;
+        } else if (diffDays > 1) {
+          user.streaks = 0;
+        }
+      } else {
+        user.streaks = 0;
+      }
+      user.lastLoginAt = now;
+      if (user.subscription && user.subscription.expiresAt && new Date(user.subscription.expiresAt) < new Date()) {
+        user.subscription = { plan: 'free', startedAt: user.subscription.startedAt, expiresAt: null };
+      }
+      if (language && user.language !== language) {
+        user.language = language;
+      }
       await user.save();
     }
 

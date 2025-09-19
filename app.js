@@ -12,6 +12,8 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
+// Serve uploads statically (so avatar URLs work)
+app.use('/uploads', express.static('uploads'));
 
 // Database connection
 connectDB();

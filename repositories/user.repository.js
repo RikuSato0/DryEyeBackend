@@ -23,6 +23,14 @@ class UserRepository extends BaseRepository {
     );
   }
 
+  async updateEmail(userId, newEmail) {
+    return await this.model.findOneAndUpdate({ _id: new Types.ObjectId(userId) }, { email: newEmail }, { new: true });
+  }
+
+  async updateSubscription(userId, subscription) {
+    return await this.model.findOneAndUpdate({ _id: new Types.ObjectId(userId) }, { subscription }, { new: true });
+  }
+
   async updatePrivacyData(userId, consentPersonalDataProcessing, consentToAnonymousDataCollection) {
     return await this.model.findOneAndUpdate({ _id: new Types.ObjectId(userId) }, { consentPersonalDataProcessing, consentToAnonymousDataCollection },
       { new: true }
