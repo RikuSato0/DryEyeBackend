@@ -69,6 +69,23 @@ const UserSchema = new mongoose.Schema({
   otpLastSentAt: {
     type: Date,
     default: null
+  },
+  // Two-factor authentication (2FA)
+  twoFactorEnabled: {
+    type: Boolean,
+    default: false
+  },
+  twoFactorMethod: {
+    type: String,
+    default: null
+  },
+  twoFactorTempCodeHash: {
+    type: String,
+    default: null
+  },
+  twoFactorTempExpiresAt: {
+    type: Date,
+    default: null
   }
 });
 
@@ -84,6 +101,19 @@ UserSchema.add({
     default: null
   },
   photoUrl: {
+    type: String,
+    default: null
+  },
+  // Linked identity providers for account linking
+  linkedProviders: {
+    type: [String],
+    default: []
+  },
+  googleUid: {
+    type: String,
+    default: null
+  },
+  appleUid: {
     type: String,
     default: null
   },

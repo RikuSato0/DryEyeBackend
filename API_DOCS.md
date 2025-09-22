@@ -130,6 +130,57 @@ Notes
   - Errors: 400 invalid body, 401 invalid/expired idToken, 501 server not configured
   - Notes: if the provider doesn't supply a picture, server sets the default avatar.
 
+Security & Linking (JWT required)
+
+- GET `/api/auth/2fa/status`
+  - Headers: `Authorization: Bearer <token>`
+  - Response 200:
+    ```json
+    {
+      "success": true,
+      "message": "Security status",
+      "messageCode": 200,
+      "data": {
+        "twoFactorEnabled": true,
+        "twoFactorMethod": "email",
+        "linkedProviders": ["google"],
+        "email": "user@example.com"
+      }
+    }
+    ```
+
+- POST `/api/auth/2fa/email/start`
+  - Headers: `Authorization: Bearer <token>`
+  - Body: `{}`
+  - Behavior: Sends a one-time code to the account email. Code TTL uses `OTP_TTL_MINUTES` (default 10).
+  - Response 201: `{ success: true, message: "OTP sent to your email" }`
+
+- POST `/api/auth/2fa/verify`
+  - Headers: `Authorization: Bearer <token>`
+  - Body: `{ code }`
+  - Response 200: `{ success: true, message: "Verification successful" }`
+  - Notes: On success, enables 2FA for the user with method `email`.
+
+- POST `/api/auth/2fa/disable`
+  - Headers: `Authorization: Bearer <token>`
+  - Body: `{}`
+  - Response 200: `{ success: true, message: "2FA disabled" }`
+
+- POST `/api/auth/link/google`
+  - Headers: `Authorization: Bearer <token>`
+  - Body: `{ providerUid }`
+  - Response 200: `{ success: true, message: "Linked successfully", data: { linkedProviders: [ ... ] } }`
+
+- POST `/api/auth/link/apple`
+  - Headers: `Authorization: Bearer <token>`
+  - Body: `{ providerUid }`
+  - Response 200: `{ success: true, message: "Linked successfully", data: { linkedProviders: [ ... ] } }`
+
+- POST `/api/auth/unlink`
+  - Headers: `Authorization: Bearer <token>`
+  - Body: `{ provider: "google" | "apple" }`
+  - Response 200: `{ success: true, message: "Unlinked successfully", data: { linkedProviders: [ ... ] } }`
+
 Avatar
 - PUT `/api/user/avatar` (JWT required)
   - Headers: `Authorization: Bearer <token>`

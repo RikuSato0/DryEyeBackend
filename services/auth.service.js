@@ -329,6 +329,97 @@ class AuthService {
     await user.save();
     return user;
   }
+
+  // 2FA: start via email (send code to email for enabling 2FA)
+  async twoFAStartEmail(userId) {
+    const user = await userRepository.findById(userId);
+    if (!user) throw new ApiError(404, 'User not found', 404);
+    const otp = generateOtp();
+    user.twoFactorTempCodeHash = await hashOtp(otp);
+    user.twoFactorTempExpiresAt = getExpiryDate();
+    await user.save();
+    try {
+      await sendVerificationEmail(user.email, otp);
+    } catch (error) {
+      logger.warn('Primary mailer failed, trying alternative:', error.message);
+      await sendVerificationEmailAlt(user.email, otp);
+    }
+    return true;
+  }
+
+  // 2FA: verify code to enable 2FA
+  async twoFAVerify(userId, code) {
+    const user = await userRepository.findById(userId);
+    if (!user) throw new ApiError(404, 'User not found', 404);
+    if (!user.twoFactorTempCodeHash || !user.twoFactorTempExpiresAt) {
+      throw new ApiError(400, 'Invalid or expired code', 411);
+    }
+    if (isExpired(user.twoFactorTempExpiresAt)) {
+      user.twoFactorTempCodeHash = null;
+      user.twoFactorTempExpiresAt = null;
+      await user.save();
+      throw new ApiError(400, 'Invalid or expired code', 412);
+    }
+    const ok = await compareOtp(code, user.twoFactorTempCodeHash);
+    if (!ok) {
+      throw new ApiError(400, 'Invalid or expired code', 414);
+    }
+    user.twoFactorEnabled = true;
+    user.twoFactorMethod = 'email';
+    user.twoFactorTempCodeHash = null;
+    user.twoFactorTempExpiresAt = null;
+    await user.save();
+    return true;
+  }
+
+  // 2FA: disable
+  async twoFADisable(userId) {
+    const user = await userRepository.findById(userId);
+    if (!user) throw new ApiError(404, 'User not found', 404);
+    user.twoFactorEnabled = false;
+    user.twoFactorMethod = null;
+    user.twoFactorTempCodeHash = null;
+    user.twoFactorTempExpiresAt = null;
+    await user.save();
+    return true;
+  }
+
+  // Security status: returns flags used by app
+  async getSecurityStatus(userId) {
+    const user = await userRepository.findById(userId);
+    if (!user) throw new ApiError(404, 'User not found', 404);
+    return {
+      twoFactorEnabled: !!user.twoFactorEnabled,
+      twoFactorMethod: user.twoFactorMethod || null,
+      linkedProviders: user.linkedProviders || [],
+      email: user.email
+    };
+  }
+
+  // Link Google/Apple (store provider id and mark linked)
+  async linkProvider(userId, provider, providerUid) {
+    const user = await userRepository.findById(userId);
+    if (!user) throw new ApiError(404, 'User not found', 404);
+    if (!['google','apple'].includes(provider)) throw new ApiError(400, 'Unsupported provider', 504);
+    if (!providerUid) throw new ApiError(400, 'providerUid is required', 505);
+    if (!user.linkedProviders) user.linkedProviders = [];
+    if (!user.linkedProviders.includes(provider)) user.linkedProviders.push(provider);
+    if (provider === 'google') user.googleUid = providerUid;
+    if (provider === 'apple') user.appleUid = providerUid;
+    await user.save();
+    return { linkedProviders: user.linkedProviders };
+  }
+
+  async unlinkProvider(userId, provider) {
+    const user = await userRepository.findById(userId);
+    if (!user) throw new ApiError(404, 'User not found', 404);
+    if (!['google','apple'].includes(provider)) throw new ApiError(400, 'Unsupported provider', 504);
+    user.linkedProviders = (user.linkedProviders || []).filter(p => p !== provider);
+    if (provider === 'google') user.googleUid = null;
+    if (provider === 'apple') user.appleUid = null;
+    await user.save();
+    return { linkedProviders: user.linkedProviders };
+  }
 }
 
 module.exports = new AuthService();

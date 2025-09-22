@@ -171,6 +171,86 @@ class AuthController {
       return errorResponse(res, err.message, 400, err.messageCode);
     }
   }
+
+  // Security & 2FA
+  async securityStatus(req, res, next) {
+    try {
+      const data = await authService.getSecurityStatus(req.user.userId);
+      return successResponse(res, data, 'Security status', 200, 200);
+    } catch (err) {
+      return errorResponse(res, err.message, 400, err.messageCode);
+    }
+  }
+
+  async twoFAStartEmail(req, res, next) {
+    try {
+      await authService.twoFAStartEmail(req.user.userId);
+      return successResponse(res, {}, 'OTP sent to your email', 200, 201);
+    } catch (err) {
+      return errorResponse(res, err.message, 400, err.messageCode);
+    }
+  }
+
+  async twoFAStartSMS(req, res, next) {
+    try {
+      return errorResponse(res, 'SMS 2FA not supported', 501, 501);
+    } catch (err) {
+      return errorResponse(res, err.message, 400, err.messageCode);
+    }
+  }
+
+  async twoFAVerify(req, res, next) {
+    try {
+      const { code } = req.body;
+      if (!code) return errorResponse(res, 'code is required', 400, 400);
+      await authService.twoFAVerify(req.user.userId, code);
+      return successResponse(res, {}, 'Verification successful', 200, 200);
+    } catch (err) {
+      return errorResponse(res, err.message, 400, err.messageCode);
+    }
+  }
+
+  async twoFADisable(req, res, next) {
+    try {
+      await authService.twoFADisable(req.user.userId);
+      return successResponse(res, {}, '2FA disabled', 200, 200);
+    } catch (err) {
+      return errorResponse(res, err.message, 400, err.messageCode);
+    }
+  }
+
+  async linkGoogle(req, res, next) {
+    try {
+      const { providerUid } = req.body;
+      if (!providerUid) return errorResponse(res, 'providerUid is required', 400, 400);
+      const data = await authService.linkProvider(req.user.userId, 'google', providerUid);
+      return successResponse(res, data, 'Linked successfully', 200, 200);
+    } catch (err) {
+      return errorResponse(res, err.message, 400, err.messageCode);
+    }
+  }
+
+  async linkApple(req, res, next) {
+    try {
+      const { providerUid } = req.body;
+      if (!providerUid) return errorResponse(res, 'providerUid is required', 400, 400);
+      const data = await authService.linkProvider(req.user.userId, 'apple', providerUid);
+      return successResponse(res, data, 'Linked successfully', 200, 200);
+    } catch (err) {
+      return errorResponse(res, err.message, 400, err.messageCode);
+    }
+  }
+
+  async unlinkProvider(req, res, next) {
+    try {
+      const { provider } = req.body;
+      if (!provider) return errorResponse(res, 'provider is required', 400, 400);
+      const data = await authService.unlinkProvider(req.user.userId, provider);
+      return successResponse(res, data, 'Unlinked successfully', 200, 200);
+    } catch (err) {
+      return errorResponse(res, err.message, 400, err.messageCode);
+    }
+  }
 }
 
 module.exports = new AuthController();
