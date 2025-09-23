@@ -106,7 +106,7 @@ class EyeRoutineReminderController {
                     const active = (r.repeatReminder.includes(8) || r.repeatReminder.includes(dow)) && inRange(dStr);
                     if (!active) continue;
                     // check status for today
-                    const doc = await completionRepo.findOne(r.userId, dStr, r.type, r.time);
+                    const doc = await completionRepo.findOneByReminder(r._id, dStr, r.time) || await completionRepo.findOne(r.userId, dStr, r.type, r.time);
                     let status = doc ? doc.status : null;
                     if (!status) {
                         const nowTime = nowTz.format('HH:mm');
@@ -137,7 +137,7 @@ class EyeRoutineReminderController {
                     let status = null;
                     if (cmp <= 0) {
                         // past or today -> show history status if exists, else MISSED
-                        const doc = await completionRepo.findOne(r.userId, dStrTz, r.type, r.time);
+                        const doc = await completionRepo.findOneByReminder(r._id, dStrTz, r.time) || await completionRepo.findOne(r.userId, dStrTz, r.type, r.time);
                         status = doc ? doc.status : (requestedDate < todayReq ? 'MISSED' : 'PENDING');
                     }
                     addItem(r, dStrTz, status);
@@ -158,7 +158,14 @@ class EyeRoutineReminderController {
                     const dowToday = parseInt(nowTz.format('E'));
                     if ((r.repeatReminder.includes(8) || r.repeatReminder.includes(dowToday)) && inRange(today)) {
                         const nowTime = nowTz.format('HH:mm');
-                        if (r.time >= nowTime) addItem(r, today, 'UPCOMING'), upcoming.push(result.pop());
+                        if (r.time >= nowTime) {
+                            // Exclude if already completed/skipped/missed today
+                            const existing = await completionRepo.findOneByReminder(r._id, today, r.time) || await completionRepo.findOne(r.userId, today, r.type, r.time);
+                            if (!existing) {
+                                addItem(r, today, 'UPCOMING');
+                                upcoming.push(result.pop());
+                            }
+                        }
                     }
                     // last 2 days history
                     for (let i = 1; i <= 2; i++) {
@@ -166,7 +173,7 @@ class EyeRoutineReminderController {
                         const dStr = dTz.format('YYYY-MM-DD');
                         const dow = parseInt(dTz.format('E'));
                         if ((r.repeatReminder.includes(8) || r.repeatReminder.includes(dow)) && inRange(dStr)) {
-                            const doc = await completionRepo.findOne(r.userId, dStr, r.type, r.time);
+                            const doc = await completionRepo.findOneByReminder(r._id, dStr, r.time) || await completionRepo.findOne(r.userId, dStr, r.type, r.time);
                             const status = doc ? doc.status : 'MISSED';
                             const idxBefore = result.length;
                             addItem(r, dStr, status);
