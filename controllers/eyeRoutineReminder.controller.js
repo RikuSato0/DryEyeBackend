@@ -9,9 +9,21 @@ const ApiError = require("../utils/apiError");
 class EyeRoutineReminderController {
     async saveReminder(req, res, next) {
         try {
-            const {repeatReminder, time, instructions, type, startDate, endDate, timezone, title, selectedEye, isActive} = req.body;
+          const {repeatReminder, time, instructions, type, startDate, endDate, timezone, title, selectedEye, isActive} = req.body;
             const userId = new Types.ObjectId(req.user.userId);
-            const reminder = await eyeRoutineReminderRepo.saveRoutineReminder({ userId, repeatReminder, time, instructions, type, startDate, endDate, timezone, title, selectedEye, isActive });
+
+          // Normalize repeatReminder (sort and unique) for duplicate detection
+          const normalizedRepeat = Array.isArray(repeatReminder)
+              ? Array.from(new Set(repeatReminder.map(Number))).sort((a,b) => a - b)
+              : [];
+
+          // Prevent creating duplicate reminder with same userId, type, time, and repeatReminder set
+          const dup = await eyeRoutineReminderRepo.findDuplicateReminder(userId, type, time, normalizedRepeat);
+          if (dup) {
+              return errorResponse(res, 'Duplicate reminder exists for same type, time and repeat days', 400, 700);
+          }
+
+          const reminder = await eyeRoutineReminderRepo.saveRoutineReminder({ userId, repeatReminder: normalizedRepeat, time, instructions, type, startDate, endDate, timezone, title, selectedEye, isActive });
 
             return successResponse(res, reminder, 'Eye Routine Reminder added successfully', 203, 200);
         } catch (err) {

@@ -7,6 +7,21 @@ class EyeRoutineReminderRepository {
         return await EyeRoutineReminder.create(postData);
     }
 
+    async findDuplicateReminder(userId, type, time, repeatReminder) {
+        // Match same user, type, time and set-equal repeatReminder array
+        return await EyeRoutineReminder.findOne({
+            userId: new Types.ObjectId(userId),
+            type,
+            time,
+            $expr: {
+                $and: [
+                    { $eq: [ { $size: "$repeatReminder" }, repeatReminder.length ] },
+                    { $setEquals: [ "$repeatReminder", repeatReminder ] }
+                ]
+            }
+        });
+    }
+
     async getReminders(userId, type) {
         const filter = { userId };
         if (type) filter.type = type;
