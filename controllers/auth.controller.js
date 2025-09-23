@@ -59,6 +59,7 @@ class AuthController {
         user: {
           id: user._id,
           email: user.email,
+          timezone: user.timezone || '',
           // Add other non-sensitive user fields if needed
           streaks: user.streaks || 0,
           avatar: user.photoUrl || null
@@ -86,6 +87,7 @@ class AuthController {
         user: {
           id: user._id,
           email: user.email,
+          timezone: user.timezone || '',
           streaks: user.streaks || 0,
           avatar: user.photoUrl || null
         },
@@ -119,7 +121,8 @@ class AuthController {
       return successResponse(res, {
         user: {
           id: user._id,
-          email: user.email
+          email: user.email,
+          timezone: user.timezone || ''
         },
         token
       }, 'Login successful', 200, 200);

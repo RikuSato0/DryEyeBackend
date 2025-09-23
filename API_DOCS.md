@@ -60,7 +60,7 @@ Notes
       "message": "Verification successful",
       "messageCode": 200,
       "data": {
-        "user": { "id": "<id>", "email": "<email>", "streaks": 0, "avatar": "<url>" },
+        "user": { "id": "<id>", "email": "<email>", "timezone": "<tz>", "streaks": 0, "avatar": "<url>" },
         "token": "<JWT>"
       }
     }
@@ -102,7 +102,7 @@ Notes
       "message": "Login successful",
       "messageCode": 200,
       "data": {
-        "user": { "id": "<id>", "email": "<email>", "streaks": 3, "avatar": "<url>" },
+        "user": { "id": "<id>", "email": "<email>", "timezone": "<tz>", "streaks": 3, "avatar": "<url>" },
         "token": "<JWT>"
       }
     }
@@ -122,7 +122,7 @@ Notes
       "message": "Login successful",
       "messageCode": 200,
       "data": {
-        "user": { "id": "<id>", "email": "<email>", "streaks": 1, "avatar": "<url>" },
+        "user": { "id": "<id>", "email": "<email>", "timezone": "<tz>", "streaks": 1, "avatar": "<url>" },
         "token": "<JWT>"
       }
     }
