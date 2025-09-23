@@ -68,8 +68,11 @@ class EyeRoutineReminderController {
                     title: r.title,
                     instructions: r.instructions,
                     selectedEye: r.selectedEye,
+                    repeatReminder: r.repeatReminder,
                     timezone: r.timezone,
                     time: scheduled,
+                    startDate: moment(r.startDate).format('YYYY-MM-DD'),
+                    endDate: r.endDate ? moment(r.endDate).format('YYYY-MM-DD') : null,
                     occurrenceDate: dStr,
                     status: status || null
                 });
