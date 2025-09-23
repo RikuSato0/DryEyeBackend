@@ -21,20 +21,36 @@ class EyeRoutineReminderCompletionRepository {
     }
 
     async upsertOccurrence(reminderId, userId, type, occurrenceDate, scheduledTime, status) {
-        return await EyeRoutineReminderCompletion.updateOne(
-          { reminderId, userId, type, occurrenceDate, scheduledTime },
-          { $set: { status, recordedAt: new Date() } },
-          { upsert: true }
-        );
+        try {
+            return await EyeRoutineReminderCompletion.updateOne(
+              { reminderId, userId, type, occurrenceDate, scheduledTime },
+              { $set: { status, recordedAt: new Date() } },
+              { upsert: true }
+            );
+        } catch (err) {
+            if (err && (err.code === 11000 || (err.message && err.message.includes('E11000')))) {
+                // Ignore duplicate key race condition: another request inserted the same occurrence
+                return { acknowledged: true };
+            }
+            throw err;
+        }
     }
 
   async ensureMissedIfAbsent(reminderId, userId, type, occurrenceDate, scheduledTime) {
     // Do not overwrite existing statuses; only create if absent
-    return await EyeRoutineReminderCompletion.updateOne(
-      { reminderId, userId, type, occurrenceDate, scheduledTime },
-      { $setOnInsert: { status: 'MISSED', recordedAt: new Date() } },
-      { upsert: true }
-    );
+    try {
+      return await EyeRoutineReminderCompletion.updateOne(
+        { reminderId, userId, type, occurrenceDate, scheduledTime },
+        { $setOnInsert: { status: 'MISSED', recordedAt: new Date() } },
+        { upsert: true }
+      );
+    } catch (err) {
+      if (err && (err.code === 11000 || (err.message && err.message.includes('E11000')))) {
+        // Another concurrent request inserted the same document; safe to ignore
+        return { acknowledged: true };
+      }
+      throw err;
+    }
   }
 
   async findByUserTypeRange(userId, type, from, to) {
