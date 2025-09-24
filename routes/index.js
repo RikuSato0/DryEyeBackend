@@ -11,6 +11,7 @@ const forumRoutes = require('./forum.routes');
 const eyeCareReminderRoutes = require('./eyeCareReminder.routes');
 const testRoutes = require('./test.routes');
 const scoreRoutes = require('./score.routes');
+const productReviewRoutes = require('./productReview.routes');
 
 const authenticateToken = require('../middlewares/authMiddleware');
 
@@ -27,5 +28,6 @@ router.use('/training', authenticateToken, trainingRoute);
 router.use('/forum', authenticateToken, forumRoutes);
 router.use('/test', testRoutes);
 router.use('/score', authenticateToken, scoreRoutes);
+router.use('/product-review', authenticateToken, productReviewRoutes);
 
 module.exports = router;

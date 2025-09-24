@@ -382,6 +382,30 @@ Examples
     }
     ```
 
+---
+
+## Product Reviews (JWT required)
+
+- POST `/api/product-review/add`
+  - Body: `{ title: string, score: number (0..5), content: string }`
+  - Response 201: `{ success: true, message: "Review added successfully", messageCode: 200 }`
+
+- POST `/api/product-review/get`
+  - Body: `{ title: string }`
+  - Response 200:
+    ```json
+    {
+      "success": true,
+      "message": "Reviews fetched successfully",
+      "messageCode": 200,
+      "data": {
+        "reviews": [
+          { "_id": "<id>", "title": "<title>", "score": 4.5, "content": "<text>", "createdAt": "<iso>" }
+        ]
+      }
+    }
+    ```
+
 ## Training (JWT required)
 
 Important: The training router includes `api/...` in its internal paths and is mounted at `/api/training`. This results in final URLs like `/api/training/api/...`.
