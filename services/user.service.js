@@ -29,11 +29,15 @@ class UserService {
     if (!firstName || !lastName || !emailAddress || !state || !country) {
       throw new ApiError(400, 'All fields are required');
     }
+    const dup = await meetDoctorRepository.existsDuplicate(userId, firstName, lastName, emailAddress, state, country);
+    if (dup) throw new ApiError(400, 'Duplicate meet doctor request', 801);
     return await meetDoctorRepository.create({ userId, firstName, lastName, emailAddress, state, country });
   }
 
   async sendContactMessage(userId, email, userName, message) {
     if (!email || !userName || !message) throw new ApiError(400, 'email, userName and message are required');
+    const dup = await contactRepository.existsDuplicate(userId, email, userName, message);
+    if (dup) throw new ApiError(400, 'Duplicate contact message', 802);
     const saved = await contactRepository.create({ userId, email, userName, message });
     try {
       await sendContactEmail('satoriku955@gmail.com', userName, email, message);

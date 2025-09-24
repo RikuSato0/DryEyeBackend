@@ -192,12 +192,17 @@ class UserController {
       if (!firstName || !emailAddress) {
         throw new ApiError(400, 'Email and firstName are required', 601);
       }
+      const userId = new Types.ObjectId(req.user.userId);
+      const dup = await interestRepository.existsDuplicate(userId, firstName, lastName, emailAddress, country);
+      if (dup) {
+        return errorResponse(res, 'Duplicate interest form detected', 400, 804);
+      }
       await interestRepository.saveInterestForm({
         firstName,
         lastName,
         emailAddress,
         country,
-        userId: new Types.ObjectId(req.user.userId)
+        userId
       });
 
       return successResponse(res, {}, 'Interest Form submitted successfully', 301, 200);
@@ -210,13 +215,12 @@ class UserController {
     try {
       const {rating, feedbackSubject, description, email} = req.body;
 
-      await feedbackRepository.saveFeedback({
-        rating,
-        feedbackSubject,
-        description,
-        email,
-        userId: new Types.ObjectId(req.user.userId)
-      });
+      const userId = new Types.ObjectId(req.user.userId);
+      const dup = await feedbackRepository.existsDuplicate(userId, rating, feedbackSubject, description, email);
+      if (dup) {
+        return errorResponse(res, 'Duplicate feedback detected', 400, 803);
+      }
+      await feedbackRepository.saveFeedback({ rating, feedbackSubject, description, email, userId });
 
       return successResponse(res, {}, 'Interest Form submitted successfully', 301, 200);
     } catch (err) {

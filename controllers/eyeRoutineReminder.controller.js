@@ -25,7 +25,7 @@ class EyeRoutineReminderController {
 
           const reminder = await eyeRoutineReminderRepo.saveRoutineReminder({ userId, repeatReminder: normalizedRepeat, time, instructions, type, startDate, endDate, timezone, title, selectedEye, isActive });
 
-            return successResponse(res, reminder, 'Eye Routine Reminder added successfully', 203, 200);
+            return successResponse(res, reminder, 'Reminder added successfully', 203, 200);
         } catch (err) {
             console.error('Error saving reminder:', err);
             return errorResponse(res, err.message, 400, err.messageCode);
@@ -114,12 +114,12 @@ class EyeRoutineReminderController {
                     }
                     addItem(r, dStr, status);
                 }
-                return successResponse(res, { reminders: result }, 'Eye Routine Reminder fetch successfully', 203, 200);
+                return successResponse(res, { reminders: result }, 'Reminder fetch successfully', 203, 200);
             }
 
             if (period === 'specific') {
                 const requestedDate = date; // YYYY-MM-DD in requested tz
-                if (!requestedDate) return successResponse(res, { reminders: [] }, 'Eye Routine Reminder fetch successfully', 203, 200);
+                if (!requestedDate) return successResponse(res, { reminders: [] }, 'Reminder fetch successfully', 203, 200);
                 // Determine if requestedDate is past or future in requested tz
                 const cmp = requestedDate.localeCompare(todayReq);
                 for (const r of reminders) {
@@ -142,7 +142,7 @@ class EyeRoutineReminderController {
                     }
                     addItem(r, dStrTz, status);
                 }
-                return successResponse(res, { reminders: result }, 'Eye Routine Reminder fetch successfully', 203, 200);
+                return successResponse(res, { reminders: result }, 'Reminder fetch successfully', 203, 200);
             }
 
             if (period === 'notification') {
@@ -181,7 +181,7 @@ class EyeRoutineReminderController {
                         }
                     }
                 }
-                return successResponse(res, { upcoming, history }, 'Eye Routine Reminder fetch successfully', 203, 200);
+                return successResponse(res, { upcoming, history }, 'Reminder fetch successfully', 203, 200);
             }
 
             // default: return all reminders (no filtering)
@@ -190,7 +190,7 @@ class EyeRoutineReminderController {
                 startDate: moment(r.startDate).format('YYYY-MM-DD'),
                 endDate: r.endDate ? moment(r.endDate).format('YYYY-MM-DD') : null
             }));
-            return successResponse(res, { reminders: data }, 'Eye Routine Reminder fetch successfully', 203, 200);
+            return successResponse(res, { reminders: data }, 'Reminder fetch successfully', 203, 200);
         } catch (err) {
             return errorResponse(res, err.message, 400, err.messageCode);
         }
@@ -203,7 +203,7 @@ class EyeRoutineReminderController {
 
             await eyeRoutineReminderRepo.deleteReminder(userId, reminderId);
             await completionRepo.deleteMany(reminderId, userId);
-            return successResponse(res, {}, 'Eye Routine Reminder deleted successfully', 203, 200);
+            return successResponse(res, {}, 'Reminder deleted successfully', 203, 200);
         } catch (err) {
             return errorResponse(res, err.message, 400, err.messageCode);
         }
@@ -215,7 +215,7 @@ class EyeRoutineReminderController {
             const { id, occurrenceDate, scheduledTime, status } = req.body;
             if (!id || !occurrenceDate || !scheduledTime || !status) throw new ApiError(400, 'id, occurrenceDate, scheduledTime, status are required', 701);
             await completionRepo.upsertOccurrence(new Types.ObjectId(id), new Types.ObjectId(userId), undefined, occurrenceDate, scheduledTime, status);
-            return successResponse(res, {}, 'Eye Routine Reminder updated successfully', 203, 200);
+            return successResponse(res, {}, 'Reminder updated successfully', 203, 200);
         } catch (err) {
             return errorResponse(res, err.message, 400, err.messageCode);
         }
