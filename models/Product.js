@@ -1,0 +1,26 @@
+const mongoose = require('mongoose');
+
+const ReviewSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  score: { type: Number, required: true, min: 0, max: 5 },
+  content: { type: String, required: true, trim: true },
+  createdAt: { type: Date, default: Date.now }
+}, { _id: false });
+
+const ProductSchema = new mongoose.Schema({
+  title: { type: String, required: true, trim: true, index: true },
+  subtitle: { type: String, required: true, trim: true },
+  features: { type: [String], default: [] },
+  ingredients: { type: [String], default: [] },
+  productDetails: { type: [String], default: [] },
+  benefits: { type: [String], required: true },
+  text: { type: String, required: true },
+  image: { type: String, required: true },
+  reviews: { type: [ReviewSchema], default: [] }
+}, { timestamps: true });
+
+ProductSchema.index({ title: 1 }, { unique: true });
+
+module.exports = mongoose.model('Product', ProductSchema, 'products');
+
+

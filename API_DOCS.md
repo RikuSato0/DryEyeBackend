@@ -384,6 +384,28 @@ Examples
 
 ---
 
+## Products (JWT required)
+
+- POST `/api/product/add`
+  - Body: `{ title, subtitle, benefits:[string]|string, text, image, features?:[string]|string, ingredients?:[string]|string, productDetails?:[string]|string }`
+  - Response 201: `{ success: true, message: "Product added successfully" }`
+
+- POST `/api/product/get`
+  - Body: `{}`
+  - Response 200: `{ success: true, data: { items: [ { id, title, subtitle, image } ] } }`
+
+- POST `/api/product/get-detail`
+  - Body: `{ idOrTitle }`
+  - Response 200: `{ success: true, data: { product } }` (includes features[], ingredients[], productDetails[], benefits[], text, image, reviews[])
+
+- POST `/api/product/add-review`
+  - Body: `{ idOrTitle, score (0..5), content }`
+  - Response 201: `{ success: true, message: "Review added successfully" }`
+
+- POST `/api/product/delete`
+  - Body: `{ idOrTitle }`
+  - Response 200: `{ success: true, message: "Product deleted successfully" }`
+
 ## Product Reviews (JWT required)
 
 - POST `/api/product-review/add`
@@ -392,19 +414,7 @@ Examples
 
 - POST `/api/product-review/get`
   - Body: `{ title: string }`
-  - Response 200:
-    ```json
-    {
-      "success": true,
-      "message": "Reviews fetched successfully",
-      "messageCode": 200,
-      "data": {
-        "reviews": [
-          { "_id": "<id>", "title": "<title>", "score": 4.5, "content": "<text>", "createdAt": "<iso>" }
-        ]
-      }
-    }
-    ```
+  - Response 200: `{ success: true, data: { reviews: [ { _id, title, score, content, createdAt } ] } }`
 
 ## Training (JWT required)
 
