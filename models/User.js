@@ -31,11 +31,11 @@ const UserSchema = new mongoose.Schema({
   },
   syncAcrossDevices: {
     type: Boolean,
-    default: false
+    default: true
   },
   enableCloudBackup: {
     type: Boolean,
-    default: false
+    default: true
   },
   consentPersonalDataProcessing: {
     type: Boolean,
@@ -43,7 +43,7 @@ const UserSchema = new mongoose.Schema({
   },
   consentToAnonymousDataCollection: {
     type: Boolean,
-    default: false
+    default: true
   },
   // Email verification & OTP fields
   isVerified: {
