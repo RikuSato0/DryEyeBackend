@@ -387,23 +387,34 @@ Examples
 ## Products (JWT required)
 
 - POST `/api/product/add`
-  - Body: `{ title, subtitle, benefits:[string]|string, text, image, features?:[string]|string, ingredients?:[string]|string, productDetails?:[string]|string }`
+  - Headers: `Authorization: Bearer <token>`
+  - Content-Type: `multipart/form-data`
+  - Body (form-data):
+    - `image`: file (jpg/png/webp, max 5MB)
+    - `title`: string
+    - `subtitle`: string
+    - `benefits`: string or array (send multiple keys for arrays)
+    - `text`: string
+    - `features` (optional): string or array
+    - `ingredients` (optional): string or array
+    - `productDetails` (optional): string or array
+    - `country`: one of `US|NO|SV`
   - Response 201: `{ success: true, message: "Product added successfully" }`
 
 - POST `/api/product/get`
-  - Body: `{}`
+  - Body: `{ country?: "US"|"NO"|"SV" }`
   - Response 200: `{ success: true, data: { items: [ { id, title, subtitle, image } ] } }`
 
 - POST `/api/product/get-detail`
-  - Body: `{ idOrTitle }`
-  - Response 200: `{ success: true, data: { product } }` (includes features[], ingredients[], productDetails[], benefits[], text, image, reviews[])
+  - Body: `{ idOrTitle, country?: "US"|"NO"|"SV" }`
+  - Response 200: `{ success: true, data: { product } }` (includes features[], ingredients[], productDetails[], benefits[], text, image, country, reviews[])
 
 - POST `/api/product/add-review`
-  - Body: `{ idOrTitle, score (0..5), content }`
+  - Body: `{ idOrTitle, country, score (0..5), content }`
   - Response 201: `{ success: true, message: "Review added successfully" }`
 
 - POST `/api/product/delete`
-  - Body: `{ idOrTitle }`
+  - Body: `{ idOrTitle, country }`
   - Response 200: `{ success: true, message: "Product deleted successfully" }`
 
 ## Product Reviews (JWT required)

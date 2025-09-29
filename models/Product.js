@@ -16,6 +16,7 @@ const ProductSchema = new mongoose.Schema({
   benefits: { type: [String], required: true },
   text: { type: String, required: true },
   image: { type: String, required: true },
+  country: { type: String, required: true, enum: ['US','NO','SV'] },
   reviews: { type: [ReviewSchema], default: [] }
 }, { timestamps: true });
 

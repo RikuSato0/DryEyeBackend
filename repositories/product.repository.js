@@ -15,19 +15,23 @@ class ProductRepository extends BaseRepository {
     return await Product.findOne({ title });
   }
 
-  async listAll() {
-    return await Product.find({}).sort({ createdAt: -1 });
+  async listAll(country) {
+    const filter = country ? { country } : {};
+    return await Product.find(filter).sort({ createdAt: -1 });
   }
 
-  async findByIdOrTitle(idOrTitle) {
+  async findByIdOrTitle(idOrTitle, country) {
     if (!idOrTitle) return null;
-    if (Types.ObjectId.isValid(idOrTitle)) return await Product.findById(idOrTitle);
-    return await this.findByTitle(idOrTitle);
+    if (Types.ObjectId.isValid(idOrTitle)) {
+      const byId = await Product.findOne({ _id: idOrTitle, ...(country ? { country } : {}) });
+      if (byId) return byId;
+    }
+    return await Product.findOne({ title: idOrTitle, ...(country ? { country } : {}) });
   }
 
-  async deleteByIdOrTitle(idOrTitle) {
-    if (Types.ObjectId.isValid(idOrTitle)) return await Product.findByIdAndDelete(idOrTitle);
-    return await Product.findOneAndDelete({ title: idOrTitle });
+  async deleteByIdOrTitle(idOrTitle, country) {
+    if (Types.ObjectId.isValid(idOrTitle)) return await Product.findOneAndDelete({ _id: idOrTitle, ...(country ? { country } : {}) });
+    return await Product.findOneAndDelete({ title: idOrTitle, ...(country ? { country } : {}) });
   }
 
   async addReview(productId, userId, score, content) {
