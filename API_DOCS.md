@@ -399,15 +399,17 @@ Examples
     - `ingredients` (optional): string or array
     - `productDetails` (optional): string or array
     - `country`: one of `US|NO|SV`
+    - `productType`: string (single-select category)
+    - `profiles` (optional): string or array (multi-select tags)
   - Response 201: `{ success: true, message: "Product added successfully" }`
 
 - POST `/api/product/get`
-  - Body: `{ country?: "US"|"NO"|"SV" }`
-  - Response 200: `{ success: true, data: { items: [ { id, title, subtitle, image } ] } }`
+  - Body: `{ country?: "US"|"NO"|"SV", productType?: string, profiles?: [string] }`
+  - Response 200: `{ success: true, data: { items: [ { id, title, subtitle, image, productType, profiles: [string] } ] } }`
 
 - POST `/api/product/get-detail`
   - Body: `{ idOrTitle, country?: "US"|"NO"|"SV" }`
-  - Response 200: `{ success: true, data: { product } }` (includes features[], ingredients[], productDetails[], benefits[], text, image, country, reviews[])
+  - Response 200: `{ success: true, data: { product } }` (includes features[], ingredients[], productDetails[], benefits[], text, image, country, productType, profiles[], reviews[])
 
 - POST `/api/product/add-review`
   - Body: `{ idOrTitle, country, score (0..5), content }`

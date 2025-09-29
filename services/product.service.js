@@ -2,9 +2,9 @@ const productRepo = require('../repositories/product.repository');
 const ApiError = require('../utils/apiError');
 
 class ProductService {
-  async addProduct({ title, subtitle, benefits, text, image, features, ingredients, productDetails, country }) {
-    if (!title || !subtitle || !benefits || !text || !image || !country) {
-      throw new ApiError(400, 'title, subtitle, benefits, text, image, country are required', 900);
+  async addProduct({ title, subtitle, benefits, text, image, features, ingredients, productDetails, country, productType, profiles }) {
+    if (!title || !subtitle || !benefits || !text || !image || !country || !productType) {
+      throw new ApiError(400, 'title, subtitle, benefits, text, image, country, productType are required', 900);
     }
     const exists = await productRepo.findByTitle(title.trim());
     if (exists) throw new ApiError(400, 'Product with this title already exists', 901);
@@ -18,14 +18,16 @@ class ProductService {
       country: String(country).trim(),
       features: normalizeArray(features),
       ingredients: normalizeArray(ingredients),
-      productDetails: normalizeArray(productDetails)
+      productDetails: normalizeArray(productDetails),
+      productType: String(productType).trim(),
+      profiles: normalizeArray(profiles)
     };
     await productRepo.createProduct(data);
   }
 
-  async listProducts(country) {
-    const rows = await productRepo.listAll(country);
-    return rows.map(p => ({ id: p._id, title: p.title, subtitle: p.subtitle, image: p.image }));
+  async listProducts(country, filters) {
+    const rows = await productRepo.listAll(country, filters);
+    return rows.map(p => ({ id: p._id, title: p.title, subtitle: p.subtitle, image: p.image, productType: p.productType, profiles: p.profiles }));
   }
 
   async getProductDetail(idOrTitle, country) {

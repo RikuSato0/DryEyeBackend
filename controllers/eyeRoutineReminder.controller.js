@@ -214,7 +214,14 @@ class EyeRoutineReminderController {
             const userId = req.user.userId;
             const { id, occurrenceDate, scheduledTime, status } = req.body;
             if (!id || !occurrenceDate || !scheduledTime || !status) throw new ApiError(400, 'id, occurrenceDate, scheduledTime, status are required', 701);
-            await completionRepo.upsertOccurrence(new Types.ObjectId(id), new Types.ObjectId(userId), undefined, occurrenceDate, scheduledTime, status);
+            const reminder = await eyeRoutineReminderRepo.findById(userId, id);
+            if (!reminder) return errorResponse(res, 'Reminder not found', 404, 701);
+            // Block further changes if this occurrence already has a status record
+            const existing = await completionRepo.findOneByReminder(new Types.ObjectId(id), occurrenceDate, scheduledTime) || await completionRepo.findOne(new Types.ObjectId(userId), occurrenceDate, reminder.type, scheduledTime);
+            if (existing) {
+                return errorResponse(res, 'Status already set for this occurrence', 400, 706);
+            }
+            await completionRepo.upsertOccurrence(new Types.ObjectId(id), new Types.ObjectId(userId), reminder.type, occurrenceDate, scheduledTime, status);
             return successResponse(res, {}, 'Reminder updated successfully', 203, 200);
         } catch (err) {
             return errorResponse(res, err.message, 400, err.messageCode);

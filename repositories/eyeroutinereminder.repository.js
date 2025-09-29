@@ -7,6 +7,10 @@ class EyeRoutineReminderRepository {
         return await EyeRoutineReminder.create(postData);
     }
 
+    async findById(userId, id) {
+        return await EyeRoutineReminder.findOne({ _id: new Types.ObjectId(id), userId: new Types.ObjectId(userId) });
+    }
+
     async findDuplicateReminder(userId, type, time, repeatReminder) {
         // Match same user, type, time and set-equal repeatReminder array
         return await EyeRoutineReminder.findOne({

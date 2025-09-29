@@ -326,6 +326,22 @@ class AuthService {
     user.otpCodeHash = null;
     user.otpExpiresAt = null;
     user.otpAttemptCount = 0;
+    // Update streaks same as login
+    const now = new Date();
+    const last = user.lastLoginAt ? new Date(user.lastLoginAt) : null;
+    if (last) {
+      const lastDay = new Date(last.getFullYear(), last.getMonth(), last.getDate());
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const diffDays = Math.round((today - lastDay) / (24 * 60 * 60 * 1000));
+      if (diffDays === 1) {
+        user.streaks = (user.streaks || 0) + 1;
+      } else if (diffDays > 1) {
+        user.streaks = 0;
+      }
+    } else {
+      user.streaks = 0;
+    }
+    user.lastLoginAt = now;
     await user.save();
     return user;
   }
