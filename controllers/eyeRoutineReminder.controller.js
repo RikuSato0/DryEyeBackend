@@ -223,7 +223,7 @@ class EyeRoutineReminderController {
             }
             await completionRepo.upsertOccurrence(new Types.ObjectId(id), new Types.ObjectId(userId), reminder.type, occurrenceDate, scheduledTime, status);
             console.log(reminder)
-            return successResponse(res, {}, 'Reminder updated successfully', 203, 200);
+            return successResponse(res, {}, 'Reminder updated noted', 203, 200);
         } catch (err) {
             return errorResponse(res, err.message, 400, err.messageCode);
         }
