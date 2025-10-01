@@ -9,6 +9,9 @@ class ProductService {
     const exists = await productRepo.findByTitle(title.trim());
     if (exists) throw new ApiError(400, 'Product with this title already exists', 901);
     const normalizeArray = (val) => Array.isArray(val) ? val : (val ? [String(val)] : []);
+    if (reviewCount) reviewCount = Number(reviewCount);
+    if (rating) rating = Number(rating);
+    console.log(reviewCount, rating);
     const data = {
       title: title.trim(),
       subtitle: subtitle.trim(),
@@ -21,8 +24,8 @@ class ProductService {
       productDetails: normalizeArray(productDetails),
       productType: String(productType).trim(),
       profiles: normalizeArray(profiles),
-      reviewCount:Number(reviewCount),
-      rating: Number(rating)
+      reviewCount: reviewCount,
+      rating: rating
     };
     await productRepo.createProduct(data);
   }
