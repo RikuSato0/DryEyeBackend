@@ -133,6 +133,14 @@ UserSchema.add({
 
 // Subscription information
 UserSchema.add({
+  role: {
+    type: String,
+    enum: ['user', 'admin'],
+    default: 'user'
+  }
+});
+
+UserSchema.add({
   subscription: {
     plan: {
       type: String,

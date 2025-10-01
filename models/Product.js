@@ -19,7 +19,9 @@ const ProductSchema = new mongoose.Schema({
   country: { type: String, required: true, enum: ['US','NO','SV'] },
   productType: { type: String, required: true, trim: true },
   profiles: { type: [String], default: [] },
-  reviews: { type: [ReviewSchema], default: [] }
+  reviews: { type: [ReviewSchema], default: [] },
+  reviewCount: { type: Number, default: 0 },
+  rating: { type: Number, default: 0 }
 }, { timestamps: true });
 
 ProductSchema.index({ title: 1 }, { unique: true });

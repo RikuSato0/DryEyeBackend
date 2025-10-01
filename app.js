@@ -14,6 +14,8 @@ app.use(cors());
 app.use(express.json());
 // Serve uploads statically (so avatar URLs work)
 app.use('/uploads', express.static('uploads'));
+// Serve documents statically (e.g., /docs/terms.pdf)
+app.use('/docs', express.static('docs'));
 
 // Database connection
 connectDB();

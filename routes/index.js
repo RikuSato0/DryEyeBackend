@@ -13,6 +13,7 @@ const testRoutes = require('./test.routes');
 const scoreRoutes = require('./score.routes');
 const productReviewRoutes = require('./productReview.routes');
 const productRoutes = require('./product.routes');
+const adminRoutes = require('./admin.routes');
 
 const authenticateToken = require('../middlewares/authMiddleware');
 
@@ -21,6 +22,7 @@ router.get('/', (req, res) => {
 });
 
 router.use('/auth', authRoutes);
+router.use('/admin', adminRoutes);
 router.use('/user', authenticateToken, userRoutes);
 router.use('/info', authenticateToken, infoRoutes);
 router.use('/eye-care', eyeCareRoute);
