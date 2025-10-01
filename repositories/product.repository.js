@@ -15,14 +15,8 @@ class ProductRepository extends BaseRepository {
     return await Product.findOne({ title });
   }
 
-  async listAll(country, filters) {
+  async listAll(country) {
     const filter = country ? { country } : {};
-    if (filters && filters.productType) {
-      filter.productType = filters.productType;
-    }
-    if (filters && Array.isArray(filters.profiles) && filters.profiles.length) {
-      filter.profiles = { $all: filters.profiles };
-    }
     return await Product.find(filter).sort({ createdAt: -1 });
   }
 

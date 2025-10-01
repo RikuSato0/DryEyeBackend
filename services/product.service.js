@@ -27,8 +27,12 @@ class ProductService {
     await productRepo.createProduct(data);
   }
 
-  async listProducts(country, filters) {
-    const rows = await productRepo.listAll(country, filters);
+  async listProducts(idOrTitle, country) {
+    if (idOrTitle) {
+      const one = await productRepo.findByIdOrTitle(idOrTitle, country);
+      return one ? [{ id: one._id, title: one.title, subtitle: one.subtitle, image: one.image, productType: one.productType, profiles: one.profiles, reviewCount: one.reviewCount, rating: one.rating }] : [];
+    }
+    const rows = await productRepo.listAll(country);
     return rows.map(p => ({ id: p._id, title: p.title, subtitle: p.subtitle, image: p.image, productType: p.productType, profiles: p.profiles, reviewCount: p.reviewCount, rating: p.rating }));
   }
 

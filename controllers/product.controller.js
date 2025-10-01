@@ -16,8 +16,8 @@ class ProductController {
 
   async list(req, res) {
     try {
-      const { country, productType, profiles } = req.body || {};
-      const items = await productService.listProducts(country, { productType, profiles });
+      const { idOrTitle, country } = req.body || {};
+      const items = await productService.listProducts(idOrTitle, country);
       return successResponse(res, { items }, 'Products fetched successfully', 200, 200);
     } catch (err) {
       return errorResponse(res, err.message, 400, err.messageCode);

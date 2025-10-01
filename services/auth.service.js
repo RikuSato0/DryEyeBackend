@@ -17,7 +17,7 @@ class AuthService {
     if (userExists) {
       throw new ApiError(400, 'The email address is already registered', 408);
     }
-    const defaultAvatar = process.env.DEFAULT_AVATAR_URL || '/uploads/default.png';
+    const defaultAvatar = process.env.DEFAULT_AVATAR_URL || '/uploads/avatars/default.png';
     const user = await userRepository.create({ email, password, userName, country, timezone, language, isVerified: false, photoUrl: defaultAvatar });
 
     const otp = generateOtp();
@@ -210,7 +210,7 @@ class AuthService {
     if (!user) {
       // Create user with a placeholder password (will be hashed by pre-save)
       const randomPassword = Math.random().toString(36).slice(-12) + '!A9';
-      const defaultAvatar = process.env.DEFAULT_AVATAR_URL || '/uploads/default.png';
+      const defaultAvatar = process.env.DEFAULT_AVATAR_URL || '/uploads/avatars/default.png';
       user = await userRepository.create({
         email,
         password: randomPassword,
