@@ -30,4 +30,4 @@ jobs:
             npm install --production
 
             # Reload your app with PM2
-            pm2 reload app-name --update-env
+            pm2 reload app.js --update-env
