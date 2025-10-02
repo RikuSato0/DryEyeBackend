@@ -16,7 +16,7 @@ const ProductSchema = new mongoose.Schema({
   benefits: { type: [String], required: true },
   text: { type: String, required: true },
   image: { type: String, required: true },
-  country: { type: String, required: true, enum: ['US','NO','SV'] },
+  country: { type: String, required: true, enum: ['US','NO','SE'] },
   productType: { type: String, required: true, trim: true },
   profiles: { type: [String], default: [] },
   reviews: { type: [ReviewSchema], default: [] },
