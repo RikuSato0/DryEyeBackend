@@ -76,7 +76,7 @@ class ProductService {
 
   async updateProduct(idOrTitle, update) {
     if (!idOrTitle) throw new ApiError(400, 'idOrTitle is required', 908);
-    const prod = await productRepo.findByIdOrTitle(idOrTitle, update && update.country);
+    const prod = await productRepo.findByIdOrTitle(idOrTitle);
     if (!prod) throw new ApiError(404, 'Product not found', 902);
     const normalizeArray = (val) => Array.isArray(val) ? val : (val ? [String(val)] : undefined);
     // Only set provided fields
