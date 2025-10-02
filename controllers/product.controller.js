@@ -6,8 +6,8 @@ class ProductController {
     try {
       const publicBase = process.env.PUBLIC_BASE_URL || '';
       const imagePath = req.file ? (publicBase ? `${publicBase}/uploads/products/${req.file.filename}` : `/uploads/products/${req.file.filename}`) : (req.body && req.body.image);
-      const { title, subtitle, benefits, text,reviewCount, rating, features, ingredients, productDetails, country, productType, profiles } = req.body || {};
-      await productService.addProduct({ title, subtitle, benefits, text, image: imagePath, features, ingredients, productDetails, country, productType, profiles, reviewCount, rating });
+      const { title, subtitle, benefits, text,reviewCount, rating, features, ingredients, productDetails, country, productType, profiles, active } = req.body || {};
+      await productService.addProduct({ title, subtitle, benefits, text, image: imagePath, features, ingredients, productDetails, country, productType, profiles, reviewCount, rating, active });
       return successResponse(res, {}, 'Product added successfully', 200, 201);
     } catch (err) {
       return errorResponse(res, err.message, 400, err.messageCode);
@@ -49,9 +49,18 @@ class ProductController {
     try {
       const publicBase = process.env.PUBLIC_BASE_URL || '';
       const imagePath = req.file ? (publicBase ? `${publicBase}/uploads/products/${req.file.filename}` : `/uploads/products/${req.file.filename}`) : (req.body && req.body.image);
-      const { idOrTitle, title, subtitle, benefits, text, features, ingredients, productDetails, country, productType, profiles, reviewCount, rating } = req.body || {};
-      await productService.updateProduct(idOrTitle, { title, subtitle, benefits, text, image: imagePath, features, ingredients, productDetails, country, productType, profiles, reviewCount, rating });
+      const { idOrTitle, title, subtitle, benefits, text, features, ingredients, productDetails, country, productType, profiles, reviewCount, rating, active } = req.body || {};
+      await productService.updateProduct(idOrTitle, { title, subtitle, benefits, text, image: imagePath, features, ingredients, productDetails, country, productType, profiles, reviewCount, rating, active });
       return successResponse(res, {}, 'Product updated successfully', 200, 200);
+    } catch (err) {
+      return errorResponse(res, err.message, 400, err.messageCode);
+    }
+  }
+
+  async getAll(req, res) {
+    try {
+      const products = await productService.getAllProducts();
+      return successResponse(res, { products }, 'All products fetched successfully', 200, 200);
     } catch (err) {
       return errorResponse(res, err.message, 400, err.messageCode);
     }

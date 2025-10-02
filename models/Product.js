@@ -21,7 +21,8 @@ const ProductSchema = new mongoose.Schema({
   profiles: { type: [String], default: [] },
   reviews: { type: [ReviewSchema], default: [] },
   reviewCount: { type: Number, default: 0 },
-  rating: { type: Number, default: 0 }
+  rating: { type: Number, default: 0 },
+  active: { type: Boolean, default: true }
 }, { timestamps: true });
 
 ProductSchema.index({ title: 1 }, { unique: true });

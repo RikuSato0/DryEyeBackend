@@ -10,6 +10,7 @@ router.post('/get-detail', productController.detail);
 router.post('/add-review', productController.addReview);
 router.post('/update', adminOnly, uploadProductImage.single('image'), productController.update);
 router.post('/delete', adminOnly, productController.delete);
+router.post('/get-all', adminOnly, productController.getAll);
 
 module.exports = router;
 

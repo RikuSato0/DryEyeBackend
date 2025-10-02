@@ -2,7 +2,7 @@ const productRepo = require('../repositories/product.repository');
 const ApiError = require('../utils/apiError');
 
 class ProductService {
-  async addProduct({ title, subtitle, benefits, text, image, features, ingredients, productDetails, country, productType, profiles, reviewCount, rating }) {
+  async addProduct({ title, subtitle, benefits, text, image, features, ingredients, productDetails, country, productType, profiles, reviewCount, rating, active }) {
     if (!title || !subtitle || !benefits || !text || !image || !country || !productType) {
       throw new ApiError(400, 'title, subtitle, benefits, text, image, country, productType are required', 900);
     }
@@ -25,7 +25,8 @@ class ProductService {
       productType: String(productType).trim(),
       profiles: normalizeArray(profiles),
       reviewCount: reviewCount,
-      rating: rating
+      rating: rating,
+      ...(active !== undefined ? { active: String(active).toLowerCase() === 'true' || active === true } : {})
     };
     await productRepo.createProduct(data);
   }
@@ -33,10 +34,10 @@ class ProductService {
   async listProducts(idOrTitle, country) {
     if (idOrTitle) {
       const one = await productRepo.findByIdOrTitle(idOrTitle, country);
-      return one ? [{ id: one._id, title: one.title, subtitle: one.subtitle, image: one.image, productType: one.productType, profiles: one.profiles, reviewCount: one.reviewCount, rating: one.rating }] : [];
+      return one ? [{ id: one._id, title: one.title, subtitle: one.subtitle, image: one.image, productType: one.productType, profiles: one.profiles, reviewCount: one.reviewCount, rating: one.rating, active: !!one.active }] : [];
     }
     const rows = await productRepo.listAll(country);
-    return rows.map(p => ({ id: p._id, title: p.title, subtitle: p.subtitle, image: p.image, productType: p.productType, profiles: p.profiles, reviewCount: p.reviewCount, rating: p.rating }));
+    return rows.map(p => ({ id: p._id, title: p.title, subtitle: p.subtitle, image: p.image, productType: p.productType, profiles: p.profiles, reviewCount: p.reviewCount, rating: p.rating, active: !!p.active }));
   }
 
   async getProductDetail(idOrTitle, country) {
@@ -91,8 +92,15 @@ class ProductService {
     if (update.country !== undefined) prod.country = String(update.country).trim();
     if (update.productType !== undefined) prod.productType = String(update.productType).trim();
     if (update.profiles !== undefined) prod.profiles = normalizeArray(update.profiles) || [];
+    if (update.active !== undefined) {
+      prod.active = String(update.active).toLowerCase() === 'true' || update.active === true;
+    }
     // reviewCount and rating should be computed from reviews; ignore direct overrides
     await prod.save();
+  }
+
+  async getAllProducts() {
+    return await productRepo.listAll();
   }
 }
 
