@@ -32,6 +32,6 @@ router.use('/forum', authenticateToken, forumRoutes);
 router.use('/test', testRoutes);
 router.use('/score', authenticateToken, scoreRoutes);
 router.use('/product-review', authenticateToken, productReviewRoutes);
-router.use('/product', authenticateToken, productRoutes);
+router.use('/product',productRoutes);
 
 module.exports = router;

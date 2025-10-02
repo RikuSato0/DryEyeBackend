@@ -7,6 +7,7 @@ class ProductController {
       const publicBase = process.env.PUBLIC_BASE_URL || '';
       const imagePath = req.file ? (publicBase ? `${publicBase}/uploads/products/${req.file.filename}` : `/uploads/products/${req.file.filename}`) : (req.body && req.body.image);
       const { title, subtitle, benefits, text,reviewCount, rating, features, ingredients, productDetails, country, productType, profiles, active } = req.body || {};
+      console.log(imagePath,"imagePath")
       await productService.addProduct({ title, subtitle, benefits, text, image: imagePath, features, ingredients, productDetails, country, productType, profiles, reviewCount, rating, active });
       return successResponse(res, {}, 'Product added successfully', 200, 201);
     } catch (err) {

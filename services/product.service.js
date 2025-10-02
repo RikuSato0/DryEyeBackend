@@ -11,7 +11,6 @@ class ProductService {
     const normalizeArray = (val) => Array.isArray(val) ? val : (val ? [String(val)] : []);
     if (reviewCount) reviewCount = Number(reviewCount);
     if (rating) rating = Number(rating);
-    console.log(reviewCount, rating);
     const data = {
       title: title.trim(),
       subtitle: subtitle.trim(),
