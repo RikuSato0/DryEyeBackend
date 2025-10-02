@@ -1,0 +1,33 @@
+name: Deploy Node.js App to VPS
+
+# Trigger deployment on pushes to main branch
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Connect to VPS and deploy
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.VPS_HOST }}           # VPS IP
+          username: ${{ secrets.VPS_USER }}       # VPS SSH username
+          key: ${{ secrets.VPS_SSH_KEY }}         # Private SSH key
+          script: |
+            # Navigate to your project directory
+            cd /home/riku/DryEyeBackend
+
+            # Pull the latest code from GitHub
+            git fetch origin main
+            git reset --hard origin/main
+
+            # Install Node dependencies
+            npm install --production
+
+            # Reload your app with PM2
+            pm2 reload app-name --update-env
