@@ -8,7 +8,7 @@ const authenticationToken = require('../middlewares/authMiddleware');
 router.post('/add', authenticationToken,adminOnly, uploadProductImage.single('image'), productController.add);
 router.post('/get', productController.list);
 router.post('/get-detail', productController.detail);
-router.post('/add-review', productController.addReview);
+router.post('/add-review',authenticationToken, productController.addReview);
 router.post('/update', authenticationToken,adminOnly, uploadProductImage.single('image'), productController.update);
 router.post('/delete', authenticationToken,adminOnly, productController.delete);
 router.post('/get-all', authenticationToken,adminOnly, productController.getAll);
