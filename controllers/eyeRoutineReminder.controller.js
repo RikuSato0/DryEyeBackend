@@ -105,8 +105,16 @@ class EyeRoutineReminderController {
                     const dow = parseInt(nowTz.format('E'));
                     const active = (r.repeatReminder.includes(8) || r.repeatReminder.includes(dow)) && inRange(dStr);
                     if (!active) continue;
-                    // check status for today
-                    const doc = await completionRepo.findOneByReminder(r._id, dStr, r.time) || await completionRepo.findOne(r.userId, dStr, r.type, r.time);
+                    // check status for today (tolerant to off-by-one date submissions)
+                    let doc = await completionRepo.findOneByReminder(r._id, dStr, r.time) || await completionRepo.findOne(r.userId, dStr, r.type, r.time);
+                    if (!doc) {
+                        const prevDate = nowTz.clone().subtract(1, 'day').format('YYYY-MM-DD');
+                        const nextDate = nowTz.clone().add(1, 'day').format('YYYY-MM-DD');
+                        doc = await completionRepo.findOneByReminder(r._id, prevDate, r.time)
+                          || await completionRepo.findOneByReminder(r._id, nextDate, r.time)
+                          || await completionRepo.findOne(r.userId, prevDate, r.type, r.time)
+                          || await completionRepo.findOne(r.userId, nextDate, r.type, r.time);
+                    }
                     let status = doc ? doc.status : null;
                     if (!status) {
                         const nowTime = nowTz.format('HH:mm');
