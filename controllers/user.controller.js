@@ -238,6 +238,16 @@ class UserController {
     }
   }
 
+  async waitlist(req, res, next) {
+    try {
+      const { firstName, lastName, email, state, country } = req.body || {};
+      await userService.createWaitlist(req.user ? req.user.userId : null, firstName, lastName, email, state, country);
+      return successResponse(res, {}, 'Waitlist request submitted', 304, 200);
+    } catch (err) {
+      return errorResponse(res, err.message, 400, err.messageCode);
+    }
+  }
+
   async contactSynro(req, res, next) {
     try {
       const { message } = req.body;

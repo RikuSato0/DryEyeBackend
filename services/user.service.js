@@ -1,6 +1,7 @@
 const ApiError = require('../utils/apiError');
 const userRepository = require('../repositories/user.repository');
 const meetDoctorRepository = require('../repositories/meetDoctor.repository');
+const waitlistRepository = require('../repositories/waitlist.repository');
 const contactRepository = require('../repositories/contact.repository');
 const {  sendContactEmail } = require('../utils/mailer');
 
@@ -59,6 +60,15 @@ class UserService {
       // ignore email failure but keep saved
     }
     return saved;
+  }
+
+  async createWaitlist(userId, firstName, lastName, email, state, country) {
+    if (!firstName || !lastName || !email || !state || !country) {
+      throw new ApiError(400, 'All fields are required');
+    }
+    const dup = await waitlistRepository.existsDuplicate(email.toLowerCase(), firstName, lastName, state, country);
+    if (dup) throw new ApiError(400, 'Duplicate waitlist request', 805);
+    return await waitlistRepository.create({ userId: userId || null, firstName, lastName, email: email.toLowerCase(), state, country });
   }
 }
 

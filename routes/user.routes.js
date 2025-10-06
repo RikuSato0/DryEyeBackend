@@ -18,6 +18,7 @@ router.put('/avatar',authenticateToken, uploadAvatar.single('avatar'), userContr
 router.put('/email', authenticateToken, userController.updateEmail);
 router.put('/subscription',authenticateToken, userController.updateSubscription);
 router.post('/meetDoctor', userController.meetDoctor);
+router.post('/waitlist', userController.waitlist);
 router.post('/contact',authenticateToken, userController.contactSynro);
 router.post('/contact/website', userController.contactWebsite);
 
