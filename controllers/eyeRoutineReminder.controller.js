@@ -105,15 +105,22 @@ class EyeRoutineReminderController {
                     const dow = parseInt(nowTz.format('E'));
                     const active = (r.repeatReminder.includes(8) || r.repeatReminder.includes(dow)) && inRange(dStr);
                     if (!active) continue;
-                    // check status for today (tolerant to off-by-one date submissions)
-                    let doc = await completionRepo.findOneByReminder(r._id, dStr, r.time) || await completionRepo.findOne(r.userId, dStr, r.type, r.time);
+                    // check status for today (tolerant to off-by-one date and HH:mm:ss submissions)
+                    const timeCandidates = [r.time, `${r.time}:00`];
+                    const tryFind = async (dateStr) => {
+                      for (const t of timeCandidates) {
+                        const byReminder = await completionRepo.findOneByReminder(r._id, dateStr, t);
+                        if (byReminder) return byReminder;
+                        const byUser = await completionRepo.findOne(r.userId, dateStr, r.type, t);
+                        if (byUser) return byUser;
+                      }
+                      return null;
+                    };
+                    let doc = await tryFind(dStr);
                     if (!doc) {
-                        const prevDate = nowTz.clone().subtract(1, 'day').format('YYYY-MM-DD');
-                        const nextDate = nowTz.clone().add(1, 'day').format('YYYY-MM-DD');
-                        doc = await completionRepo.findOneByReminder(r._id, prevDate, r.time)
-                          || await completionRepo.findOneByReminder(r._id, nextDate, r.time)
-                          || await completionRepo.findOne(r.userId, prevDate, r.type, r.time)
-                          || await completionRepo.findOne(r.userId, nextDate, r.type, r.time);
+                      const prevDate = nowTz.clone().subtract(1, 'day').format('YYYY-MM-DD');
+                      const nextDate = nowTz.clone().add(1, 'day').format('YYYY-MM-DD');
+                      doc = await tryFind(prevDate) || await tryFind(nextDate);
                     }
                     let status = doc ? doc.status : null;
                     if (!status) {
@@ -145,7 +152,12 @@ class EyeRoutineReminderController {
                     let status = null;
                     if (cmp <= 0) {
                         // past or today -> show history status if exists, else MISSED
-                        const doc = await completionRepo.findOneByReminder(r._id, dStrTz, r.time) || await completionRepo.findOne(r.userId, dStrTz, r.type, r.time);
+                        const timeCandidates = [r.time, `${r.time}:00`];
+                        let doc = null;
+                        for (const t of timeCandidates) {
+                          doc = await completionRepo.findOneByReminder(r._id, dStrTz, t) || await completionRepo.findOne(r.userId, dStrTz, r.type, t);
+                          if (doc) break;
+                        }
                         status = doc ? doc.status : (requestedDate < todayReq ? 'MISSED' : 'PENDING');
                     }
                     addItem(r, dStrTz, status);
@@ -224,12 +236,20 @@ class EyeRoutineReminderController {
             if (!id || !occurrenceDate || !scheduledTime || !status) throw new ApiError(400, 'id, occurrenceDate, scheduledTime, status are required', 701);
             const reminder = await eyeRoutineReminderRepo.findById(userId, id);
             if (!reminder) return errorResponse(res, 'Reminder not found', 404, 701);
+            // Normalize scheduled time to HH:mm (accept HH:mm or HH:mm:ss)
+            const normalizeTime = (t) => {
+              const parts = String(t).split(':');
+              const h = (parts[0] || '00').padStart(2, '0');
+              const m = (parts[1] || '00').padStart(2, '0');
+              return `${h}:${m}`;
+            };
+            const sched = normalizeTime(scheduledTime);
             // Block further changes if this occurrence already has a status record
-            const existing = await completionRepo.findOneByReminder(new Types.ObjectId(id), occurrenceDate, scheduledTime) || await completionRepo.findOne(new Types.ObjectId(userId), occurrenceDate, reminder.type, scheduledTime);
+            const existing = await completionRepo.findOneByReminder(new Types.ObjectId(id), occurrenceDate, sched) || await completionRepo.findOne(new Types.ObjectId(userId), occurrenceDate, reminder.type, sched);
             if (existing) {
                 return errorResponse(res, 'Status already set for this occurrence', 400, 706);
             }
-            await completionRepo.upsertOccurrence(new Types.ObjectId(id), new Types.ObjectId(userId), reminder.type, occurrenceDate, scheduledTime, status);
+            await completionRepo.upsertOccurrence(new Types.ObjectId(id), new Types.ObjectId(userId), reminder.type, occurrenceDate, sched, status);
             console.log(reminder)
             return successResponse(res, {}, 'Reminder updated noted', 203, 200);
         } catch (err) {
