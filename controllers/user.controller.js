@@ -231,7 +231,7 @@ class UserController {
   async meetDoctor(req, res, next) {
     try {
       const { firstName, lastName, emailAddress, state, country } = req.body;
-      await userService.createMeetDoctor(req.user.userId, firstName, lastName, emailAddress, state, country);
+      await userService.createMeetDoctor(req.user.userId ? req.user.userId : null, firstName, lastName, emailAddress, state, country);
       return successResponse(res, {}, 'Meet doctor request submitted', 302, 200);
     } catch (err) {
       return errorResponse(res, err.message, 400, err.messageCode);

@@ -6,7 +6,7 @@ const MeetDoctorSchema = new mongoose.Schema({
   emailAddress: { type: String, required: true, trim: true, lowercase: true },
   state: { type: String, required: true, trim: true },
   country: { type: String, required: true, trim: true },
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false, default: null },
   createdAt: { type: Date, default: Date.now }
 });
 
