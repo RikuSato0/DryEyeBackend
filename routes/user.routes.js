@@ -6,22 +6,22 @@ const authenticateToken = require('../middlewares/authMiddleware');
 const { uploadAvatar } = require('../middlewares/uploadAvatar');
 
 
-router.get('/name', userController.getProfile);
-router.get('/profile', userController.getProfile);
-router.put('/userName', userController.updateProfile);
-router.delete('/deleteAccount', userController.deleteProfile);
-router.put('/setLanguage', userController.updateLanguage);
-router.put('/cloudDevices', userController.updateCloudDevices);
-router.put('/privacyData', userController.updatePrivacyData);
-router.put('/countryTimezone', userController.updateCountryTimezone);
-router.put('/avatar', uploadAvatar.single('avatar'), userController.updateAvatar);
-router.put('/email', userController.updateEmail);
-router.put('/subscription', userController.updateSubscription);
+router.get('/name',authenticateToken, userController.getProfile);
+router.get('/profile', authenticateToken, userController.getProfile);
+router.put('/userName',authenticateToken, userController.updateProfile);
+router.delete('/deleteAccount', authenticateToken, userController.deleteProfile);
+router.put('/setLanguage', authenticateToken, userController.updateLanguage);
+router.put('/cloudDevices', authenticateToken, userController.updateCloudDevices);
+router.put('/privacyData', authenticateToken, userController.updatePrivacyData);
+router.put('/countryTimezone', authenticateToken, userController.updateCountryTimezone);
+router.put('/avatar',authenticateToken, uploadAvatar.single('avatar'), userController.updateAvatar);
+router.put('/email', authenticateToken, userController.updateEmail);
+router.put('/subscription',authenticateToken, userController.updateSubscription);
 router.post('/meetDoctor', userController.meetDoctor);
-router.post('/contact', userController.contactSynro);
+router.post('/contact',authenticateToken, userController.contactSynro);
 
-router.post('/interest', userController.storeInterestForm);
-router.post('/feedback', userController.feedbackForm);
+router.post('/interest',authenticateToken, userController.storeInterestForm);
+router.post('/feedback',authenticateToken, userController.feedbackForm);
 
 
 module.exports = router;

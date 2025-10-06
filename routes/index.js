@@ -23,7 +23,7 @@ router.get('/', (req, res) => {
 
 router.use('/auth', authRoutes);
 router.use('/admin', adminRoutes);
-router.use('/user', authenticateToken, userRoutes);
+router.use('/user', userRoutes);
 router.use('/info', authenticateToken, infoRoutes);
 router.use('/eye-care', eyeCareRoute);
 router.use('/reminder', authenticateToken, eyeCareReminderRoutes);
