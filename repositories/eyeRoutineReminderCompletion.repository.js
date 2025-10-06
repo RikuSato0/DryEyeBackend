@@ -17,6 +17,10 @@ class EyeRoutineReminderCompletionRepository {
     return await EyeRoutineReminderCompletion.findOne({ reminderId, occurrenceDate, scheduledTime });
   }
 
+  async findAnyByReminderDate(reminderId, occurrenceDate) {
+    return await EyeRoutineReminderCompletion.findOne({ reminderId, occurrenceDate }).sort({ recordedAt: -1 });
+  }
+
     async deleteMany(reminderId, userId) {
         await EyeRoutineReminderCompletion.deleteMany({
             reminderId: new Types.ObjectId(reminderId),

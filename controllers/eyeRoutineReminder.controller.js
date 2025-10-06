@@ -122,6 +122,10 @@ class EyeRoutineReminderController {
                       const nextDate = nowTz.clone().add(1, 'day').format('YYYY-MM-DD');
                       doc = await tryFind(prevDate) || await tryFind(nextDate);
                     }
+                    // final fallback: accept any completion for this reminder/date regardless of time
+                    if (!doc) {
+                      doc = await completionRepo.findAnyByReminderDate(r._id, dStr);
+                    }
                     let status = doc ? doc.status : null;
                     if (!status) {
                         const nowTime = nowTz.format('HH:mm');
@@ -157,6 +161,9 @@ class EyeRoutineReminderController {
                         for (const t of timeCandidates) {
                           doc = await completionRepo.findOneByReminder(r._id, dStrTz, t) || await completionRepo.findOne(r.userId, dStrTz, r.type, t);
                           if (doc) break;
+                        }
+                        if (!doc) {
+                          doc = await completionRepo.findAnyByReminderDate(r._id, dStrTz);
                         }
                         status = doc ? doc.status : (requestedDate < todayReq ? 'MISSED' : 'PENDING');
                     }
