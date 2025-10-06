@@ -46,6 +46,20 @@ class UserService {
     }
     return saved;
   }
+
+  async sendPublicContactMessage(firstName, lastName, email, message) {
+    if (!email || !firstName || !message) throw new ApiError(400, 'email, firstName and message are required');
+    const userName = `${firstName}${lastName ? ' ' + lastName : ''}`.trim();
+    const dup = await contactRepository.existsDuplicatePublic(email, userName, message);
+    if (dup) throw new ApiError(400, 'Duplicate contact message', 802);
+    const saved = await contactRepository.create({ userId: null, email, userName, message });
+    try {
+      await sendContactEmail('satoriku955@gmail.com', userName, email, message);
+    } catch (e) {
+      // ignore email failure but keep saved
+    }
+    return saved;
+  }
 }
 
 module.exports = new UserService();

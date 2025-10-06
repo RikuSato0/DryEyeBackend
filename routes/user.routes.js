@@ -19,6 +19,7 @@ router.put('/email', authenticateToken, userController.updateEmail);
 router.put('/subscription',authenticateToken, userController.updateSubscription);
 router.post('/meetDoctor', userController.meetDoctor);
 router.post('/contact',authenticateToken, userController.contactSynro);
+router.post('/contact/website', userController.contactWebsite);
 
 router.post('/interest',authenticateToken, userController.storeInterestForm);
 router.post('/feedback',authenticateToken, userController.feedbackForm);

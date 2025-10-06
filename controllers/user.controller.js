@@ -249,6 +249,19 @@ class UserController {
       return errorResponse(res, err.message, 400, err.messageCode);
     }
   }
+
+  async contactWebsite(req, res, next) {
+    try {
+      const { firstName, lastName, email, message } = req.body || {};
+      if (!firstName || !email || !message) {
+        return errorResponse(res, 'firstName, email and message are required', 400, 601);
+      }
+      await userService.sendPublicContactMessage(firstName, lastName, email, message);
+      return successResponse(res, {}, 'Message sent successfully', 303, 200);
+    } catch (err) {
+      return errorResponse(res, err.message, 400, err.messageCode);
+    }
+  }
 }
 
 module.exports = new UserController();
