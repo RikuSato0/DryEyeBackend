@@ -108,6 +108,7 @@ Notes
     }
     ```
   - If the account is not verified: 403 with message `Please verify your email`.
+  - If the account is deactivated (admin set `active=false`): 403 with message `Account is deactivated. Contact support.`
 
 - POST `/api/auth/change-password`
   - Body: `{ email, oldPassword, newPassword }`
@@ -401,19 +402,55 @@ Examples
     - `country`: one of `US|NO|SV`
     - `productType`: string (single-select category)
     - `profiles` (optional): string or array (multi-select tags)
+    - `affiliateLink` (optional): string URL (also accepts `affiliate_link`)
+    - `purchaseLink` (optional): string URL (also accepts `purchase_link`)
   - Response 201: `{ success: true, message: "Product added successfully" }`
 
 - POST `/api/product/get`
   - Body: `{ country?: "US"|"NO"|"SV", productType?: string, profiles?: [string] }`
-  - Response 200: `{ success: true, data: { items: [ { id, title, subtitle, image, productType, profiles: [string] } ] } }`
+  - Response 200: `{ success: true, data: { items: [ { id, title, subtitle, image, productType, profiles: [string], affiliateLink, purchaseLink } ] } }`
 
 - POST `/api/product/get-detail`
   - Body: `{ idOrTitle, country?: "US"|"NO"|"SV" }`
-  - Response 200: `{ success: true, data: { product } }` (includes features[], ingredients[], productDetails[], benefits[], text, image, country, productType, profiles[], reviews[])
+  - Response 200: `{ success: true, data: { product } }` (includes features[], ingredients[], productDetails[], benefits[], text, image, country, productType, profiles[], affiliateLink, purchaseLink, reviews[])
 
 - POST `/api/product/add-review`
   - Body: `{ idOrTitle, country, score (0..5), content }`
   - Response 201: `{ success: true, message: "Review added successfully" }`
+
+### Postman examples (Products)
+
+1) Add product (multipart/form-data)
+```
+POST http://localhost:3000/api/product/add
+Headers:
+  Authorization: Bearer <ADMIN_TOKEN>
+Body (form-data):
+  image: <file>
+  title: Lubricant Eye Drops
+  subtitle: Preservative-free
+  benefits: Long-lasting relief
+  benefits: Suitable for contacts
+  text: Detailed description here
+  features: Sterile
+  ingredients: Sodium Hyaluronate
+  productDetails: 10ml bottle
+  country: US
+  productType: drops
+  profiles: dry_eye
+  affiliateLink: https://example.com/affiliate
+  purchaseLink: https://shop.example.com/product/123
+```
+
+2) Update product (multipart/form-data)
+```
+POST http://localhost:3000/api/product/update
+Headers:
+  Authorization: Bearer <ADMIN_TOKEN>
+Body (form-data):
+  idOrTitle: Lubricant Eye Drops
+  purchase_link: https://shop.example.com/product/123-updated
+```
 
 - POST `/api/product/delete`
   - Body: `{ idOrTitle, country }`
@@ -513,6 +550,106 @@ Uploads
 - GET `/api/forum/uploads/<file>` → serves static files
 
 ---
+
+## Admin
+
+All admin endpoints require:
+- Header: `Authorization: Bearer <ADMIN_TOKEN>` (obtained from `/api/admin/login`)
+
+### Login
+- POST `/api/admin/login`
+  - Body: `{ email, password }`
+  - Response 200: `{ success: true, data: { admin: { id, email, role: "admin" }, token } }`
+
+### User Management
+- POST `/api/admin/users`
+  - Body (optional filters): `{ email?: string, role?: "user"|"admin", active?: boolean }`
+  - Response 200: `{ success: true, data: { users: [ { ...user, password omitted } ] } }`
+
+- POST `/api/admin/users/detail`
+  - Body: `{ userId }`
+  - Response 200: `{ success: true, data: { user: { ... } } }`
+
+- POST `/api/admin/users/update`
+  - Body: `{ userId, userName?, country?, timezone?, language?, role?, active?, syncAcrossDevices?, enableCloudBackup?, consentPersonalDataProcessing?, consentToAnonymousDataCollection? }`
+  - Response 200: `{ success: true, data: { user } }`
+
+- POST `/api/admin/users/set-active`
+  - Body: `{ userId, active: boolean }`
+  - Response 200: `{ success: true, message: "User updated", data: { user } }`
+
+- POST `/api/admin/users/set-password`
+  - Body: `{ userId, newPassword }`
+  - Response 200: `{ success: true, message: "Password updated" }`
+
+- POST `/api/admin/users/set-subscription`
+  - Body: `{ userId, subscription: { plan: "free|standard_monthly|premium_monthly|premium_yearly", startedAt?: ISODate, expiresAt?: ISODate } }`
+  - Response 200: `{ success: true, message: "Subscription updated", data: { user } }`
+
+### Postman examples (Admin)
+
+1) Admin login
+```
+POST http://localhost:3000/api/admin/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "P@ssw0rd"
+}
+```
+
+2) List users (active admins)
+```
+POST http://localhost:3000/api/admin/users
+Authorization: Bearer <ADMIN_TOKEN>
+Content-Type: application/json
+
+{ "role": "admin", "active": true }
+```
+
+3) Deactivate a user
+```
+POST http://localhost:3000/api/admin/users/set-active
+Authorization: Bearer <ADMIN_TOKEN>
+Content-Type: application/json
+
+{ "userId": "<USER_ID>", "active": false }
+```
+
+4) Update user language and role
+```
+POST http://localhost:3000/api/admin/users/update
+Authorization: Bearer <ADMIN_TOKEN>
+Content-Type: application/json
+
+{ "userId": "<USER_ID>", "language": "sv", "role": "admin" }
+```
+
+5) Set password
+```
+POST http://localhost:3000/api/admin/users/set-password
+Authorization: Bearer <ADMIN_TOKEN>
+Content-Type: application/json
+
+{ "userId": "<USER_ID>", "newPassword": "NewP@ssw0rd123" }
+```
+
+6) Set subscription
+```
+POST http://localhost:3000/api/admin/users/set-subscription
+Authorization: Bearer <ADMIN_TOKEN>
+Content-Type: application/json
+
+{
+  "userId": "<USER_ID>",
+  "subscription": {
+    "plan": "premium_yearly",
+    "startedAt": "2025-01-01T00:00:00.000Z",
+    "expiresAt": "2026-01-01T00:00:00.000Z"
+  }
+}
+```
 
 ## Known Quirks & Tips
 
