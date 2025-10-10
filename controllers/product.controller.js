@@ -7,8 +7,10 @@ class ProductController {
       const publicBase = process.env.PUBLIC_BASE_URL || '';
       const imagePath = req.file ? (publicBase ? `${publicBase}/uploads/products/${req.file.filename}` : `/uploads/products/${req.file.filename}`) : (req.body && req.body.image);
       const { title, subtitle, benefits, text,reviewCount, rating, features, ingredients, productDetails, country, productType, profiles, active } = req.body || {};
+      const affiliateLink = (req.body && (req.body.affiliateLink || req.body.affiliate_link)) || undefined;
+      const purchaseLink = (req.body && (req.body.purchaseLink || req.body.purchase_link)) || undefined;
       console.log(imagePath,"imagePath")
-      await productService.addProduct({ title, subtitle, benefits, text, image: imagePath, features, ingredients, productDetails, country, productType, profiles, reviewCount, rating, active });
+      await productService.addProduct({ title, subtitle, benefits, text, image: imagePath, features, ingredients, productDetails, country, productType, profiles, reviewCount, rating, active, affiliateLink, purchaseLink });
       return successResponse(res, {}, 'Product added successfully', 200, 201);
     } catch (err) {
       return errorResponse(res, err.message, 400, err.messageCode);
@@ -51,7 +53,9 @@ class ProductController {
       const publicBase = process.env.PUBLIC_BASE_URL || '';
       const imagePath = req.file ? (publicBase ? `${publicBase}/uploads/products/${req.file.filename}` : `/uploads/products/${req.file.filename}`) : (req.body && req.body.image);
       const { idOrTitle, title, subtitle, benefits, text, features, ingredients, productDetails, country, productType, profiles, reviewCount, rating, active } = req.body || {};
-      await productService.updateProduct(idOrTitle, { title, subtitle, benefits, text, image: imagePath, features, ingredients, productDetails, country, productType, profiles, reviewCount, rating, active });
+      const affiliateLinkU = (req.body && (req.body.affiliateLink || req.body.affiliate_link)) || undefined;
+      const purchaseLinkU = (req.body && (req.body.purchaseLink || req.body.purchase_link)) || undefined;
+      await productService.updateProduct(idOrTitle, { title, subtitle, benefits, text, image: imagePath, features, ingredients, productDetails, country, productType, profiles, reviewCount, rating, active, affiliateLink: affiliateLinkU, purchaseLink: purchaseLinkU });
       return successResponse(res, {}, 'Product updated successfully', 200, 200);
     } catch (err) {
       return errorResponse(res, err.message, 400, err.messageCode);

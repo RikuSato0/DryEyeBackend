@@ -2,7 +2,7 @@ const productRepo = require('../repositories/product.repository');
 const ApiError = require('../utils/apiError');
 
 class ProductService {
-  async addProduct({ title, subtitle, benefits, text, image, features, ingredients, productDetails, country, productType, profiles, reviewCount, rating, active }) {
+  async addProduct({ title, subtitle, benefits, text, image, features, ingredients, productDetails, country, productType, profiles, reviewCount, rating, active, affiliateLink, purchaseLink }) {
     if (!title || !subtitle || !benefits || !text || !image || !country || !productType) {
       throw new ApiError(400, 'title, subtitle, benefits, text, image, country, productType are required', 900);
     }
@@ -25,7 +25,9 @@ class ProductService {
       profiles: normalizeArray(profiles),
       reviewCount: reviewCount,
       rating: rating,
-      ...(active !== undefined ? { active: String(active).toLowerCase() === 'true' || active === true } : {})
+      ...(active !== undefined ? { active: String(active).toLowerCase() === 'true' || active === true } : {}),
+      ...(affiliateLink !== undefined && affiliateLink !== null ? { affiliateLink: String(affiliateLink).trim() } : {}),
+      ...(purchaseLink !== undefined && purchaseLink !== null ? { purchaseLink: String(purchaseLink).trim() } : {})
     };
     await productRepo.createProduct(data);
   }
@@ -33,10 +35,10 @@ class ProductService {
   async listProducts(idOrTitle, country) {
     if (idOrTitle) {
       const one = await productRepo.findByIdOrTitle(idOrTitle, country);
-      return one ? [{ id: one._id, title: one.title, subtitle: one.subtitle, image: one.image, productType: one.productType, profiles: one.profiles, reviewCount: one.reviewCount, rating: one.rating, active: !!one.active, benefits: one.benefits, ingredients: one.ingredients, productDetails: one.productDetails, country: one.country }] : [];
+      return one ? [{ id: one._id, title: one.title, subtitle: one.subtitle, image: one.image, productType: one.productType, profiles: one.profiles, reviewCount: one.reviewCount, rating: one.rating, active: !!one.active, benefits: one.benefits, ingredients: one.ingredients, productDetails: one.productDetails, country: one.country, affiliateLink: one.affiliateLink, purchaseLink: one.purchaseLink }] : [];
     }
     const rows = await productRepo.listAll(country);
-    return rows.map(p => ({ id: p._id, title: p.title, subtitle: p.subtitle, image: p.image, productType: p.productType, profiles: p.profiles, reviewCount: p.reviewCount, rating: p.rating, active: !!p.active, benefits: p.benefits, ingredients: p.ingredients, productDetails: p.productDetails, country: p.country }));
+    return rows.map(p => ({ id: p._id, title: p.title, subtitle: p.subtitle, image: p.image, productType: p.productType, profiles: p.profiles, reviewCount: p.reviewCount, rating: p.rating, active: !!p.active, benefits: p.benefits, ingredients: p.ingredients, productDetails: p.productDetails, country: p.country, affiliateLink: p.affiliateLink, purchaseLink: p.purchaseLink }));
   }
 
   async getProductDetail(idOrTitle, country) {
@@ -94,6 +96,8 @@ class ProductService {
     if (update.active !== undefined) {
       prod.active = String(update.active).toLowerCase() === 'true' || update.active === true;
     }
+    if (update.affiliateLink !== undefined) prod.affiliateLink = String(update.affiliateLink).trim();
+    if (update.purchaseLink !== undefined) prod.purchaseLink = String(update.purchaseLink).trim();
     // reviewCount and rating should be computed from reviews; ignore direct overrides
     await prod.save();
   }

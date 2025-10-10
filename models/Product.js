@@ -22,6 +22,8 @@ const ProductSchema = new mongoose.Schema({
   reviews: { type: [ReviewSchema], default: [] },
   reviewCount: { type: Number, default: 0 },
   rating: { type: Number, default: 0 },
+  affiliateLink: { type: String, default: '' },
+  purchaseLink: { type: String, default: '' },
   active: { type: Boolean, default: true }
 }, { timestamps: true });
 

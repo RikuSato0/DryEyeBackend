@@ -64,6 +64,28 @@ class UserRepository extends BaseRepository {
     return await User.deleteOne({ _id: new Types.ObjectId(userId) });
   }
 
+  async findPublicById(userId) {
+    return await User.findOne({ _id: new Types.ObjectId(userId) }).select('-password');
+  }
+
+  async listUsers(filter = {}, options = {}) {
+    const query = {};
+    if (filter.email) query.email = { $regex: new RegExp(filter.email, 'i') };
+    if (filter.role) query.role = filter.role;
+    if (typeof filter.active === 'boolean') query.active = filter.active;
+    const projection = options.projection || '-password';
+    const sort = options.sort || { createdAt: -1 };
+    return await User.find(query, projection).sort(sort);
+  }
+
+  async setActive(userId, active) {
+    return await this.model.findOneAndUpdate(
+      { _id: new Types.ObjectId(userId) },
+      { active: !!active },
+      { new: true, select: '-password' }
+    );
+  }
+
 }
 
 module.exports = new UserRepository();

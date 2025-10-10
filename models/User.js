@@ -45,6 +45,10 @@ const UserSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  active: {
+    type: Boolean,
+    default: true
+  },
   // Email verification & OTP fields
   isVerified: {
     type: Boolean,

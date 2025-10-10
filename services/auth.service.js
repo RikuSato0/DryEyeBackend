@@ -42,6 +42,9 @@ class AuthService {
     if (!user) {
       throw new ApiError(401, 'Incorrect email or password', 406);
     }
+    if (user.active === false) {
+      throw new ApiError(403, 'Account is deactivated. Contact support.', 460);
+    }
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       throw new ApiError(401, 'Incorrect email or password', 407);
@@ -224,6 +227,9 @@ class AuthService {
         language
       });
     } else {
+      if (user.active === false) {
+        throw new ApiError(403, 'Account is deactivated. Contact support.', 460);
+      }
       user.isVerified = true;
       user.firebaseUid = firebaseUid;
       user.authProvider = providerId;
