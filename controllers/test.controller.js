@@ -62,7 +62,7 @@ class TestController {
 
       for (const config of configs) {
         try {
-          const transporter = nodemailer.createTransporter({
+          const transporter = nodemailer.createTransport({
             host: config.host,
             port: config.port,
             secure: config.secure,
