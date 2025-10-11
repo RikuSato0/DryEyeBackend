@@ -73,66 +73,41 @@ async function sendVerificationEmail(toEmail, code) {
   const text = `Your verification code is ${code}. It expires in ${process.env.OTP_TTL_MINUTES || 10} minutes.`;
   const html = `<p>Your verification code is <b>${code}</b>.</p><p>It expires in ${process.env.OTP_TTL_MINUTES || 10} minutes.</p>`;
 
-  logger.info(`Attempting to send verification email to: ${toEmail}`);
+  logger?.info?.(`Attempting to send verification email to: ${toEmail}`);
 
-  // Build SMTP configurations (prefer explicit port, otherwise fast-fail order with 2525 first)
-  const preferredPort = Number(process.env.SMTP_PORT || 0);
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || 'smtp-relay.brevo.com',
+      port: Number(process.env.SMTP_PORT) || 587,
+      secure: false, // must be false for STARTTLS on port 587
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      },
+      tls: {
+        ciphers: 'SSLv3',
+        rejectUnauthorized: false,
+      },
+      connectionTimeout: 15000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
+    });
 
-  const buildConfig = (port) => ({
-    name: `Brevo (Port ${port})`,
-    host: process.env.SMTP_HOST,
-    port,
-    secure: port === 465,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS
-    },
-    tls: { rejectUnauthorized: false },
-    // Tighter timeouts to avoid long delays when a port is blocked
-    connectionTimeout: 12000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
-    dnsTimeout: 8000,
-    family: 4
-  });
+    const result = await transporter.sendMail({
+      from: `"${fromName}" <${fromEmail}>`,
+      to: toEmail,
+      subject,
+      text,
+      html,
+    });
 
-  const smtpConfigs = preferredPort
-    ? [buildConfig(preferredPort)]
-    : [buildConfig(2525), buildConfig(587), buildConfig(465)];
+    logger?.info?.(`✅ Email sent successfully via Brevo: ${result.messageId}`);
+    return result;
 
-  let lastError;
-
-  for (const config of smtpConfigs) {
-    try {
-      logger.info(`Trying ${config.name} - Host: ${config.host}, Port: ${config.port}`);
-      
-      const transporter = nodemailer.createTransport(config);
-      
-      // Verify connection first
-      await transporter.verify();
-      logger.info(`${config.name} connection verified successfully`);
-
-      const result = await transporter.sendMail({
-        from: `${fromName} <${fromEmail}>`,
-        to: toEmail,
-        subject,
-        text,
-        html
-      });
-
-      logger.info(`Email sent successfully via ${config.name}: ${result.messageId}`);
-      return result;
-      
-    } catch (error) {
-      lastError = error;
-      logger.warn(`Failed to send email via ${config.name}:`, error.message);
-      continue;
-    }
+  } catch (error) {
+    logger?.error?.(`❌ Failed to send email via Brevo: ${error.message}`);
+    throw new Error(`Email sending failed: ${error.message}`);
   }
-
-  // If all configurations failed
-  logger.error('All SMTP configurations failed. Last error:', lastError);
-  throw new Error(`Email sending failed: ${lastError?.message || 'No SMTP provider available'}`);
 }
 
 async function sendContactEmail(toEmail, userName, fromEmail, message) {
